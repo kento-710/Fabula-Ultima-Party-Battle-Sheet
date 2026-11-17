@@ -1,0 +1,2498 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fabula Ultima · Party & Battle Sheet</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --fu-dark: #254742;
+      --fu-mid: #477870;
+      --fu-light: #a5c9c1;
+      --fu-bg: #eef4f2;
+      --fu-border: #b8ceca;
+    }
+    body {
+      font-family: 'Kanit', sans-serif;
+      background-color: #181c20;
+      color: #1a2624;
+    }
+    .font-bebas {
+      font-family: 'Bebas Neue', 'Kanit', sans-serif;
+      letter-spacing: 0.04em;
+    }
+    .fu-header-grad {
+      background: linear-gradient(90deg, #21403b 0%, #3d6b63 60%, #99beb6 100%);
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #e2ece9; }
+    ::-webkit-scrollbar-thumb { background: #8eb0a9; border-radius: 99px; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] { -moz-appearance: textfield; }
+  </style>
+</head>
+<body class="min-h-screen py-4 px-2 sm:px-4 md:py-6 flex flex-col items-center">
+
+  <!-- Top Party Toolbar -->
+  <div class="w-full max-w-7xl mb-3 bg-[#1b2e28] border border-[#3d6b63] rounded-lg px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-white shadow-lg">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="font-bebas text-xl text-[#9ee0d3] tracking-wider">FABULA ULTIMA · PARTY SHEET</span>
+      <span id="partyCountBadge" class="text-xs bg-[#254742] px-2 py-0.5 rounded border border-[#4c7d75] text-[#c5e6df]">4 Players</span>
+      <span id="onlineStatusBadge" class="text-xs bg-emerald-950/90 px-2 py-0.5 rounded border border-emerald-500/60 text-emerald-300">
+        🟢 Online Auto-Sync
+      </span>
+    </div>
+    <div class="flex flex-wrap items-center gap-1.5">
+      <button type="button" onclick="addNewCharacter()"
+        class="px-3 py-1 rounded text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white cursor-pointer shadow">
+        ➕ เพิ่มตัวละคร (P5+)
+      </button>
+      <button type="button" id="btnViewGrid" onclick="setViewMode('grid')"
+        class="px-3 py-1 rounded text-xs font-bold bg-[#3d6b63] text-white cursor-pointer">
+        🪟 แสดงทั้งหมดพร้อมกัน
+      </button>
+      <button type="button" id="btnViewSingle" onclick="setViewMode('single')"
+        class="px-3 py-1 rounded text-xs font-bold bg-[#254742] hover:bg-[#315c55] text-gray-200 cursor-pointer">
+        🖥️ ดูทีละคน
+      </button>
+      <select id="singleFocusSelect" onchange="setSingleFocus(Number(this.value))"
+        class="hidden bg-[#254742] border border-[#4c7d75] rounded px-2 py-1 text-xs font-bold text-white outline-none cursor-pointer">
+      </select>
+      <button type="button" id="btnToggleBattle" onclick="toggleBattlePanel()"
+        class="px-3 py-1 rounded text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white cursor-pointer shadow">
+        ⚔️ โหมดต่อสู้ (BATTLE ARENA)
+      </button>
+      <button type="button" onclick="restoreAllParty()"
+        class="px-3 py-1 rounded text-xs font-bold bg-emerald-700 hover:bg-emerald-600 text-white cursor-pointer">
+        ✨ ฟื้นฟูทั้งปาร์ตี้
+      </button>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       FABULA ULTIMA INTERACTIVE BATTLE ARENA
+       ===================================================================== -->
+  <section id="battleArena" class="w-full max-w-7xl mb-4 bg-[#172522] border-2 border-[#4d857c] rounded-lg shadow-2xl text-white overflow-hidden">
+    <div class="bg-[#233d38] px-4 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-[#3c6b63]">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-bebas text-xl text-[#9ee0d3] tracking-wider">⚔️ FABULA ULTIMA · BATTLE SYSTEM</span>
+        <span id="battleTurnBadge" class="bg-amber-500 text-black font-bebas text-sm px-2.5 py-0.5 rounded">TURN 1</span>
+        <span id="battleTargetSummary" class="text-xs bg-[#182926] border border-[#3d6b63] px-2.5 py-0.5 rounded text-[#c5e6df]">
+          เป้าหมาย: -
+        </span>
+      </div>
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button type="button" onclick="nextBattleTurn()"
+          class="bg-[#3d6b63] hover:bg-[#4e877d] text-white text-xs font-bold px-3 py-1 rounded cursor-pointer">
+          ⏭️ จบเทิร์น / เริ่มเทิร์นถัดไป
+        </button>
+        <button type="button" onclick="addEnemy()"
+          class="bg-rose-700 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1 rounded cursor-pointer">
+          + เพิ่มศัตรู
+        </button>
+        <button type="button" onclick="resetBattleArena()"
+          class="bg-[#254742] hover:bg-[#315c55] text-gray-200 text-xs font-bold px-2.5 py-1 rounded cursor-pointer">
+          🔄 รีเซ็ตการต่อสู้
+        </button>
+      </div>
+    </div>
+
+    <div class="p-3 grid grid-cols-1 lg:grid-cols-12 gap-3">
+      <!-- Left: Party Combatants -->
+      <div class="lg:col-span-4 bg-[#1c2e2a] border border-[#355750] rounded-md p-2.5 space-y-2">
+        <div class="flex items-center justify-between border-b border-white/10 pb-1">
+          <span class="font-bebas text-base text-[#9ee0d3]">🛡️ PARTY COMBATANTS</span>
+          <span class="text-[11px] text-gray-400">คลิกเลือกผู้ร่าย/โจมตี</span>
+        </div>
+        <div id="battlePartyList" class="space-y-2"></div>
+      </div>
+
+      <!-- Center: Enemy Roster & Target Selection -->
+      <div class="lg:col-span-4 bg-[#1c2e2a] border border-[#355750] rounded-md p-2.5 space-y-2">
+        <div class="flex items-center justify-between border-b border-white/10 pb-1">
+          <span class="font-bebas text-base text-rose-300">👾 ENEMIES (คลิกเลือกเป้าหมาย)</span>
+          <span class="text-[11px] text-gray-400">เทียบ DEF / M.DEF อัตโนมัติ</span>
+        </div>
+        <div id="battleEnemyList" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+      </div>
+
+      <!-- Right: Quick Action Console & Battle Log -->
+      <div class="lg:col-span-4 bg-[#1c2e2a] border border-[#355750] rounded-md p-2.5 flex flex-col justify-between gap-2">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between border-b border-white/10 pb-1">
+            <span class="font-bebas text-base text-amber-300">⚡ ACTION CONSOLE</span>
+            <select id="battleActorSelect" onchange="selectBattleActor(Number(this.value))"
+              class="bg-[#254742] border border-[#4c7d75] rounded px-2 py-0.5 text-xs font-bold text-white outline-none">
+            </select>
+          </div>
+
+          <div id="battleActorActions" class="space-y-1.5 max-h-44 overflow-y-auto pr-1 text-xs"></div>
+
+          <!-- Enemy Counterattack / Custom Damage Tool -->
+          <div class="bg-[#152320] border border-[#32524b] rounded p-2 space-y-1.5 text-xs">
+            <div class="font-bebas text-sm text-rose-300">💥 ศัตรูโจมตีกลับ / คิดดาเมจเข้าตัวละคร</div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <select id="incomingTargetPlayer" class="bg-[#223834] border border-[#456b63] rounded px-2 py-1 text-xs text-white"></select>
+              <input id="incomingDmgInput" type="number" value="12" placeholder="ดาเมจ"
+                class="w-16 bg-[#223834] border border-[#456b63] rounded px-2 py-1 text-center text-xs text-white">
+              <select id="incomingElemSelect" class="bg-[#223834] border border-[#456b63] rounded px-1.5 py-1 text-xs text-white">
+                <option value="physical">🗡️ กายภาพ</option>
+                <option value="wind">🍃 ลม</option>
+                <option value="bolt">⚡ สายฟ้า</option>
+                <option value="dark">🌙 มืด</option>
+                <option value="earth">🪨 ดิน</option>
+                <option value="fire">🔥 ไฟ</option>
+                <option value="ice">❄️ น้ำแข็ง</option>
+                <option value="light">☀️ แสง</option>
+                <option value="poison">💀 พิษ</option>
+              </select>
+              <button type="button" onclick="applyIncomingDamageToPlayer()"
+                class="bg-rose-700 hover:bg-rose-600 text-white font-bold px-2.5 py-1 rounded cursor-pointer">
+                รับดาเมจ
+              </button>
+            </div>
+
+            <!-- Guard / Cover Interception Bar -->
+            <div class="pt-1.5 border-t border-white/10 flex flex-wrap items-center justify-between gap-1.5">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-bebas text-xs text-sky-300">🛡️ GUARD / COVER:</span>
+                <select id="guardProviderSelect" class="bg-[#223834] border border-[#456b63] rounded px-1.5 py-0.5 text-[11px] text-white"></select>
+                <span class="text-[11px] text-gray-300">คุ้มกัน</span>
+                <select id="guardProtectedSelect" class="bg-[#223834] border border-[#456b63] rounded px-1.5 py-0.5 text-[11px] text-white"></select>
+              </div>
+              <button type="button" onclick="activateGuardCover()"
+                class="bg-sky-700 hover:bg-sky-600 text-white font-bold px-2.5 py-0.5 rounded text-[11px] cursor-pointer">
+                🛡️ ตั้ง Guard / Cover
+              </button>
+            </div>
+            <div id="activeGuardBanner" class="text-[11px] text-sky-200 bg-sky-950/50 border border-sky-700/40 rounded px-2 py-1 hidden"></div>
+          </div>
+        </div>
+
+        <div class="bg-[#121e1b] border border-[#2f4d46] rounded p-2">
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-bebas text-sm text-[#9ee0d3]">📜 BATTLE LOG</span>
+            <button type="button" onclick="clearBattleLog()" class="text-[10px] text-gray-400 hover:text-white cursor-pointer">ล้าง</button>
+          </div>
+          <div id="battleLogList" class="space-y-1 max-h-32 overflow-y-auto text-[11px] text-gray-200"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Party Sheets Container -->
+  <div id="partyContainer" class="w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4"></div>
+
+  <!-- Check Modal -->
+  <div id="checkModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg border-2 border-[#254742] w-full max-w-md shadow-2xl overflow-hidden">
+      <div class="bg-[#254742] text-white px-4 py-2.5 flex items-center justify-between">
+        <div>
+          <div class="text-[10px] text-[#9ee0d3] tracking-widest uppercase">FABULA ULTIMA DICE SYSTEM</div>
+          <h3 id="checkModalTitle" class="font-bebas text-xl tracking-wide">ATTRIBUTE CHECK</h3>
+        </div>
+        <button type="button" onclick="closeCheckModal()" class="text-white/80 hover:text-white text-lg px-2 cursor-pointer">✕</button>
+      </div>
+      <div class="p-4 space-y-3 text-sm">
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">ค่าสถานะที่ 1</label>
+            <select id="modalDie1" class="w-full border border-gray-300 rounded px-2 py-1.5 bg-gray-50 font-medium">
+              <option value="dex">DEX</option>
+              <option value="ins">INS</option>
+              <option value="mig">MIG</option>
+              <option value="wlp">WLP</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">ค่าสถานะที่ 2</label>
+            <select id="modalDie2" class="w-full border border-gray-300 rounded px-2 py-1.5 bg-gray-50 font-medium">
+              <option value="dex">DEX</option>
+              <option value="ins" selected>INS</option>
+              <option value="mig">MIG</option>
+              <option value="wlp">WLP</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">โบนัส (+/-)</label>
+            <input id="modalMod" type="number" value="0" class="w-full border border-gray-300 rounded px-2 py-1.5 bg-gray-50 text-center font-medium">
+          </div>
+        </div>
+        <div class="bg-[#eef4f2] border border-[#c6dad6] rounded p-3 text-center">
+          <div class="text-xs text-gray-500 mb-1">ทอยเต๋า 2 ลูกและคำนวณ HR (แต้มสูงสุด) อัตโนมัติ</div>
+          <button type="button" onclick="executeCheckRoll()"
+            class="w-full bg-[#254742] hover:bg-[#1b3632] text-white font-bebas text-lg tracking-wider py-2 rounded shadow transition cursor-pointer">
+            🎲 ทอยเต๋าตรวจสอบ (ROLL CHECK)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Online Multiplayer Auto-Sync Module (No Room Code / No Manual Packet) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'fabula-ultima-live-party';
+    const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '';
+    let db = null;
+    let auth = null;
+    let currentUid = null;
+    let docRef = null;
+    let remoteLock = false;
+    let pushTimer = null;
+
+    function updateOnlineBadge(label, active) {
+      const badge = document.getElementById('onlineStatusBadge');
+      if (!badge) return;
+      badge.textContent = label;
+      badge.className = active
+        ? 'text-xs bg-emerald-950/90 px-2 py-0.5 rounded border border-emerald-500/70 text-emerald-300'
+        : 'text-xs bg-[#254742] px-2 py-0.5 rounded border border-[#4c7d75] text-[#c5e6df]';
+    }
+
+    async function writeLiveStateNow() {
+      if (!docRef || !currentUid || remoteLock || !window.party || !window.battleState) return;
+      try {
+        await setDoc(docRef, {
+          party: JSON.parse(JSON.stringify(window.party)),
+          battleState: JSON.parse(JSON.stringify(window.battleState)),
+          updatedBy: currentUid,
+          updatedAt: Date.now()
+        }, { merge: true });
+      } catch (err) {
+        console.error('Online push error:', err);
+      }
+    }
+
+    function pushLiveState() {
+      if (pushTimer) clearTimeout(pushTimer);
+      pushTimer = setTimeout(() => {
+        writeLiveStateNow();
+      }, 120);
+    }
+
+    window.pushLiveState = pushLiveState;
+
+    async function startLiveSync() {
+      if (!rawConfig) {
+        updateOnlineBadge('🟢 Local Live Sync', true);
+        return;
+      }
+      try {
+        const config = typeof rawConfig === 'string' ? JSON.parse(rawConfig) : rawConfig;
+        const app = initializeApp(config);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+        currentUid = auth.currentUser?.uid || null;
+        if (!currentUid) return;
+
+        docRef = doc(db, 'artifacts', appId, 'public', 'data', 'fabula_live_room', 'shared_party');
+        updateOnlineBadge('🟢 Online Live', true);
+
+        onSnapshot(docRef, (snap) => {
+          if (!snap.exists()) {
+            writeLiveStateNow();
+            return;
+          }
+          const payload = snap.data();
+          if (!payload || payload.updatedBy === currentUid) return;
+
+          remoteLock = true;
+          try {
+            if (Array.isArray(payload.party) && payload.party.length > 0) {
+              window.party = payload.party;
+              localStorage.setItem('fu_party_live_v3', JSON.stringify(window.party));
+              if (Array.isArray(window.activeTabs)) {
+                while (window.activeTabs.length < window.party.length) window.activeTabs.push('sheet');
+                window.activeTabs.length = window.party.length;
+              }
+              if (Array.isArray(window.rollHistories)) {
+                while (window.rollHistories.length < window.party.length) window.rollHistories.push([]);
+                window.rollHistories.length = window.party.length;
+              }
+            }
+            if (payload.battleState && Array.isArray(payload.battleState.enemies)) {
+              window.battleState = payload.battleState;
+              localStorage.setItem('fu_battle_live_v3', JSON.stringify(window.battleState));
+              if (!window.battleState.enemies.some(e => e.id === window.selectedEnemyId)) {
+                window.selectedEnemyId = window.battleState.enemies[0]?.id || '';
+              }
+            }
+            if (typeof window.syncPartySelectors === 'function') window.syncPartySelectors();
+            if (typeof window.renderParty === 'function') window.renderParty();
+            if (typeof window.renderBattleArena === 'function') window.renderBattleArena();
+          } finally {
+            remoteLock = false;
+          }
+        }, (err) => {
+          console.error('Online snapshot error:', err);
+          updateOnlineBadge('🟢 Local Live Sync', true);
+        });
+      } catch (err) {
+        console.error('Online init error:', err);
+        updateOnlineBadge('🟢 Local Live Sync', true);
+      }
+    }
+
+    startLiveSync();
+  </script>
+
+  <!-- Core Application Script -->
+  <script>
+    const STORAGE_KEY = 'fu_party_live_v3';
+    const BATTLE_STORAGE_KEY = 'fu_battle_live_v3';
+
+    const ELEMENTS = [
+      { key: 'physical', icon: '🗡️', name: 'กายภาพ (Physical)' },
+      { key: 'wind',     icon: '🍃', name: 'ลม (Air)' },
+      { key: 'bolt',     icon: '⚡', name: 'สายฟ้า (Bolt)' },
+      { key: 'dark',     icon: '🌙', name: 'ความมืด (Dark)' },
+      { key: 'earth',    icon: '🪨', name: 'ดิน (Earth)' },
+      { key: 'fire',     icon: '🔥', name: 'ไฟ (Fire)' },
+      { key: 'ice',      icon: '❄️', name: 'น้ำแข็ง (Ice)' },
+      { key: 'light',    icon: '☀️', name: 'แสง (Light)' },
+      { key: 'poison',   icon: '💀', name: 'พิษ (Poison)' }
+    ];
+
+    const STATUS_LIST = [
+      { key: 'slow',     label: 'Slow',     desc: 'DEX ลด 1 ขั้น',       mods: { dex: -1 }, negative: true },
+      { key: 'dazed',    label: 'Dazed',    desc: 'INS ลด 1 ขั้น',       mods: { ins: -1 }, negative: true },
+      { key: 'enraged',  label: 'Enraged',  desc: 'DEX & INS ลด 1 ขั้น', mods: { dex: -1, ins: -1 }, negative: true },
+      { key: 'weak',     label: 'Weak',     desc: 'MIG ลด 1 ขั้น',       mods: { mig: -1 }, negative: true },
+      { key: 'shaken',   label: 'Shaken',   desc: 'WLP ลด 1 ขั้น',       mods: { wlp: -1 }, negative: true },
+      { key: 'poisoned', label: 'Poisoned', desc: 'MIG & WLP ลด 1 ขั้น', mods: { mig: -1, wlp: -1 }, negative: true },
+      { key: 'dexUp',    label: 'Dex Up',   desc: 'DEX เพิ่ม 1 ขั้น',    mods: { dex: 1 },  negative: false },
+      { key: 'insUp',    label: 'Ins Up',   desc: 'INS เพิ่ม 1 ขั้น',    mods: { ins: 1 },  negative: false },
+      { key: 'mightUp',  label: 'Might Up', desc: 'MIG เพิ่ม 1 ขั้น',    mods: { mig: 1 },  negative: false },
+      { key: 'wlpUp',    label: 'Wlp Up',   desc: 'WLP เพิ่ม 1 ขั้น',    mods: { wlp: 1 },  negative: false }
+    ];
+
+    const IMMUNITY_LIST = STATUS_LIST.filter(s => s.negative);
+    const DIE_STEPS = ['d6', 'd8', 'd10', 'd12'];
+    const AFFINITY_CYCLE = ['', 'VU', 'RS', 'AB', 'IM'];
+    const BOND_FEELINGS = ['Admiration', 'Inferiority', 'Loyalty', 'Mistrust', 'Affection', 'Hatred'];
+
+    function createDefaultChar(slotNum) {
+      return {
+        name: `PLAYER ${slotNum}`,
+        level: 5,
+        avatar: '',
+        attributes: { dex: 'd8', ins: 'd8', mig: 'd8', wlp: 'd8' },
+        statuses: {},
+        immunities: {},
+        def: 10,
+        mdef: 10,
+        init: 0,
+        hp: 40,
+        hpMax: 40,
+        mp: 40,
+        mpMax: 40,
+        ip: 6,
+        ipMax: 6,
+        fp: 3,
+        zenit: 500,
+        affinities: {},
+        gear: {
+          armor: { name: 'Silk Shirt', def: 0, mdef: 2, martial: false },
+          shield: { name: '-', def: 0, mdef: 0 },
+          accessory: { name: '-', desc: '' }
+        },
+        weapons: [
+          {
+            id: `w-${slotNum}-1`,
+            name: 'Steel Sword (มือหลัก)',
+            attr1: 'dex',
+            attr2: 'mig',
+            accBonus: 1,
+            baseDmg: 6,
+            element: 'physical',
+            equipped: true
+          }
+        ],
+        offHandWeapon: {
+          id: `w-${slotNum}-off`,
+          name: 'Off-Hand Blade (มือที่ 2 · HR อย่างเดียว)',
+          attr1: 'dex',
+          attr2: 'mig',
+          accBonus: 0,
+          baseDmg: 0,
+          element: 'physical',
+          equipped: true
+        },
+        spells: [
+          {
+            id: `sp-${slotNum}-1`,
+            name: 'Ignis (ลูกไฟเวท)',
+            mpCost: 5,
+            target: 'One creature',
+            offensive: true,
+            attr1: 'ins',
+            attr2: 'wlp',
+            baseDmg: 10,
+            element: 'fire',
+            desc: 'สร้างความเสียหายไฟ [HR + 10] และหัก 5 MP'
+          },
+          {
+            id: `sp-${slotNum}-2`,
+            name: 'Heal (ฟื้นฟู HP)',
+            mpCost: 5,
+            target: 'One creature',
+            offensive: false,
+            attr1: 'ins',
+            attr2: 'wlp',
+            baseDmg: 0,
+            element: 'light',
+            desc: 'ฟื้นฟู HP และหัก 5 MP'
+          }
+        ],
+        classes: [
+          { name: 'WEAPONMASTER', level: 3, skills: [] }
+        ],
+        effects: [
+          { name: 'Dual Wield Rule', active: true, desc: 'มือหลักคิด HR + ฐาน / อาวุธมือที่ 2 เอา HR มาเป็นดาเมจอย่างเดียว' }
+        ],
+        identity: '',
+        theme: '',
+        origin: '',
+        bonds: [],
+        notes: ''
+      };
+    }
+
+    function createDefaultBattleState() {
+      return {
+        turn: 1,
+        guardCover: null,
+        enemies: [
+          {
+            id: 'enemy-1',
+            name: 'Goblin Raider',
+            avatar: '',
+            hp: 60,
+            hpMax: 60,
+            def: 10,
+            mdef: 9,
+            affinities: { fire: 'VU', ice: 'RS' }
+          }
+        ],
+        logs: ['[ระบบ] เริ่มการต่อสู้ Turn 1 — เลือกผู้เล่นด้านซ้ายและเลือกศัตรูเป็นเป้าหมาย']
+      };
+    }
+
+    function loadParty() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length >= 1) {
+            return parsed.map((p, idx) => ({
+              ...createDefaultChar(idx + 1),
+              ...p,
+              statuses: p.statuses || {},
+              immunities: p.immunities || {},
+              spells: Array.isArray(p.spells) ? p.spells : [],
+              effects: Array.isArray(p.effects) ? p.effects : []
+            }));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      return [createDefaultChar(1), createDefaultChar(2), createDefaultChar(3), createDefaultChar(4)];
+    }
+
+    function loadBattleState() {
+      try {
+        const raw = localStorage.getItem(BATTLE_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.enemies)) {
+            return {
+              turn: Number(parsed.turn) || 1,
+              guardCover: parsed.guardCover || null,
+              enemies: parsed.enemies,
+              logs: Array.isArray(parsed.logs) ? parsed.logs : []
+            };
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      return createDefaultBattleState();
+    }
+
+    let party = loadParty();
+    let battleState = loadBattleState();
+    let battleActorSlot = 0;
+    let selectedEnemyId = battleState.enemies[0]?.id || '';
+    let battleArenaVisible = true;
+    let viewMode = 'grid';
+    let singleFocusSlot = 0;
+    let activeModalSlot = 0;
+    let currentModalCheckType = 'ATTRIBUTE CHECK';
+    let activeTabs = party.map(() => 'sheet');
+    let rollHistories = party.map(() => []);
+    let tabChannel = null;
+
+    window.party = party;
+    window.battleState = battleState;
+    window.selectedEnemyId = selectedEnemyId;
+    window.activeTabs = activeTabs;
+    window.rollHistories = rollHistories;
+
+    function notifyLocalTabs() {
+      try {
+        window.party = party;
+        window.battleState = battleState;
+        window.selectedEnemyId = selectedEnemyId;
+        if (tabChannel) {
+          tabChannel.postMessage({ party, battleState, at: Date.now() });
+        }
+        if (typeof window.pushLiveState === 'function') {
+          window.pushLiveState();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveParty() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(party));
+        notifyLocalTabs();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveBattleState() {
+      try {
+        localStorage.setItem(BATTLE_STORAGE_KEY, JSON.stringify(battleState));
+        notifyLocalTabs();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function getChar(s) {
+      return party[s];
+    }
+
+    function isInCrisis(c) {
+      return c && c.hp > 0 && c.hp <= Math.floor(c.hpMax / 2);
+    }
+
+    function getEffectiveDie(s, attrKey) {
+      const c = getChar(s);
+      const baseDie = c.attributes[attrKey] || 'd8';
+      let stepIdx = DIE_STEPS.indexOf(baseDie);
+      if (stepIdx === -1) stepIdx = 1;
+      let netSteps = 0;
+      STATUS_LIST.forEach(st => {
+        if (c.statuses?.[st.key] && st.mods[attrKey]) {
+          netSteps += st.mods[attrKey];
+        }
+      });
+      const finalIdx = Math.max(0, Math.min(DIE_STEPS.length - 1, stepIdx + netSteps));
+      return DIE_STEPS[finalIdx];
+    }
+
+    function getDieSides(s, attrKey) {
+      return Number(getEffectiveDie(s, attrKey).replace(/\D/g, '')) || 8;
+    }
+
+    function syncPartySelectors() {
+      const badge = document.getElementById('partyCountBadge');
+      if (badge) badge.textContent = `${party.length} Players`;
+
+      const optionsHtml = party.map((c, idx) =>
+        `<option value="${idx}">P${idx + 1} · ${escapeHtml(c.name)}</option>`
+      ).join('');
+
+      const singleSel = document.getElementById('singleFocusSelect');
+      if (singleSel) {
+        singleSel.innerHTML = optionsHtml;
+        singleSel.value = String(singleFocusSlot);
+      }
+
+      const actorSel = document.getElementById('battleActorSelect');
+      if (actorSel) {
+        actorSel.innerHTML = optionsHtml;
+        actorSel.value = String(battleActorSlot);
+      }
+
+      const targetSel = document.getElementById('incomingTargetPlayer');
+      if (targetSel) targetSel.innerHTML = optionsHtml;
+
+      const guardProv = document.getElementById('guardProviderSelect');
+      if (guardProv) guardProv.innerHTML = optionsHtml;
+
+      const guardProt = document.getElementById('guardProtectedSelect');
+      if (guardProt) {
+        guardProt.innerHTML = optionsHtml;
+        if (party.length > 1) guardProt.value = '1';
+      }
+    }
+
+    function addNewCharacter() {
+      const nextNum = party.length + 1;
+      party.push(createDefaultChar(nextNum));
+      activeTabs.push('sheet');
+      rollHistories.push([]);
+      saveParty();
+      syncPartySelectors();
+      renderParty();
+      renderBattleArena();
+      pushBattleLog(`➕ เพิ่มตัวละครใหม่: P${nextNum} (${party[party.length - 1].name})`);
+    }
+
+    function removeCharacter(s) {
+      if (party.length <= 1) return;
+      const removedName = party[s]?.name || `P${s + 1}`;
+      party.splice(s, 1);
+      activeTabs.splice(s, 1);
+      rollHistories.splice(s, 1);
+      if (singleFocusSlot >= party.length) singleFocusSlot = Math.max(0, party.length - 1);
+      if (battleActorSlot >= party.length) battleActorSlot = Math.max(0, party.length - 1);
+      saveParty();
+      syncPartySelectors();
+      renderParty();
+      renderBattleArena();
+      pushBattleLog(`🗑️ ลบตัวละคร: ${removedName}`);
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      const btnGrid = document.getElementById('btnViewGrid');
+      const btnSingle = document.getElementById('btnViewSingle');
+      const sel = document.getElementById('singleFocusSelect');
+      const container = document.getElementById('partyContainer');
+
+      if (mode === 'grid') {
+        btnGrid.className = 'px-3 py-1 rounded text-xs font-bold bg-[#3d6b63] text-white cursor-pointer';
+        btnSingle.className = 'px-3 py-1 rounded text-xs font-bold bg-[#254742] hover:bg-[#315c55] text-gray-200 cursor-pointer';
+        sel.classList.add('hidden');
+        container.className = 'w-full max-w-7xl grid grid-cols-1 xl:grid-cols-2 gap-4';
+      } else {
+        btnGrid.className = 'px-3 py-1 rounded text-xs font-bold bg-[#254742] hover:bg-[#315c55] text-gray-200 cursor-pointer';
+        btnSingle.className = 'px-3 py-1 rounded text-xs font-bold bg-[#3d6b63] text-white cursor-pointer';
+        sel.classList.remove('hidden');
+        sel.value = String(singleFocusSlot);
+        container.className = 'w-full max-w-4xl grid grid-cols-1 gap-4';
+      }
+      renderParty();
+    }
+
+    function setSingleFocus(s) {
+      singleFocusSlot = Number(s) || 0;
+      renderParty();
+    }
+
+    function restoreAllParty() {
+      party.forEach(c => {
+        c.hp = c.hpMax;
+        c.mp = c.mpMax;
+        c.ip = c.ipMax;
+      });
+      saveParty();
+      renderParty();
+      renderBattleArena();
+    }
+
+    /* --- Battle Arena Functions --- */
+    function selectBattleActor(slot) {
+      battleActorSlot = Number(slot) || 0;
+      renderBattlePartyList();
+      renderBattleActorActions();
+    }
+
+    function selectEnemy(enemyId) {
+      selectedEnemyId = enemyId;
+      renderBattleArena();
+    }
+
+    function addEnemy() {
+      const idx = battleState.enemies.length + 1;
+      const newEnemy = {
+        id: `enemy-${Date.now()}`,
+        name: `Monster #${idx}`,
+        avatar: '',
+        hp: 75,
+        hpMax: 75,
+        def: 10,
+        mdef: 10,
+        affinities: {}
+      };
+      battleState.enemies.push(newEnemy);
+      selectedEnemyId = newEnemy.id;
+      saveBattleState();
+      renderBattleArena();
+      pushBattleLog(`👾 เพิ่มศัตรูใหม่: ${newEnemy.name} (HP ${newEnemy.hpMax})`);
+    }
+
+    function removeEnemy(enemyId) {
+      battleState.enemies = battleState.enemies.filter(e => e.id !== enemyId);
+      if (selectedEnemyId === enemyId) {
+        selectedEnemyId = battleState.enemies[0]?.id || '';
+      }
+      saveBattleState();
+      renderBattleArena();
+    }
+
+    function updateEnemyField(enemyId, field, value) {
+      const enemy = battleState.enemies.find(e => e.id === enemyId);
+      if (!enemy) return;
+      enemy[field] = value;
+      if (field === 'hp') {
+        enemy.hp = Math.max(0, Math.min(enemy.hpMax, Number(value) || 0));
+      }
+      saveBattleState();
+      renderBattleEnemyList();
+      const targetSummary = document.getElementById('battleTargetSummary');
+      const targetEnemy = battleState.enemies.find(e => e.id === selectedEnemyId);
+      if (targetSummary) {
+        targetSummary.textContent = targetEnemy
+          ? `เป้าหมาย: ${targetEnemy.name} (DEF ${targetEnemy.def} / M.DEF ${targetEnemy.mdef})`
+          : 'เป้าหมาย: ไม่มีศัตรู';
+      }
+    }
+
+    function uploadEnemyAvatar(enemyId, event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => updateEnemyField(enemyId, 'avatar', e.target.result);
+      reader.readAsDataURL(file);
+    }
+
+    function resetBattleArena() {
+      battleState = createDefaultBattleState();
+      selectedEnemyId = battleState.enemies[0]?.id || '';
+      saveBattleState();
+      renderBattleArena();
+    }
+
+    function toggleBattlePanel() {
+      battleArenaVisible = !battleArenaVisible;
+      const arena = document.getElementById('battleArena');
+      if (arena) arena.classList.toggle('hidden', !battleArenaVisible);
+    }
+
+    function pushBattleLog(msg) {
+      const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      battleState.logs.unshift(`[${timeStr}] ${msg}`);
+      if (battleState.logs.length > 30) battleState.logs.pop();
+      saveBattleState();
+      renderBattleLog();
+    }
+
+    function clearBattleLog() {
+      battleState.logs = [];
+      saveBattleState();
+      renderBattleLog();
+    }
+
+    function renderBattleLog() {
+      const el = document.getElementById('battleLogList');
+      if (!el) return;
+      el.innerHTML = battleState.logs.length
+        ? battleState.logs.map(l => `<div class="border-b border-white/5 pb-0.5">${escapeHtml(l)}</div>`).join('')
+        : `<div class="text-gray-500">ยังไม่มีบันทึกการต่อสู้</div>`;
+    }
+
+    function nextBattleTurn() {
+      battleState.turn = (Number(battleState.turn) || 1) + 1;
+      if (battleState.guardCover) battleState.guardCover = null;
+      saveBattleState();
+      renderBattleArena();
+      pushBattleLog(`⏭️ เข้าสู่ Turn ${battleState.turn} (รีเซ็ตสถานะ Guard / Cover)`);
+    }
+
+    function activateGuardCover() {
+      const guardianSlot = Number(document.getElementById('guardProviderSelect')?.value ?? 0);
+      const protectedSlot = Number(document.getElementById('guardProtectedSelect')?.value ?? 1);
+      if (guardianSlot === protectedSlot) {
+        pushBattleLog(`⚠️ ไม่สามารถตั้ง Guard / Cover ให้ตัวเองได้`);
+        return;
+      }
+      battleState.guardCover = { guardianSlot, protectedSlot, active: true };
+      saveBattleState();
+      renderBattleArena();
+      pushBattleLog(`🛡️ GUARD / COVER! P${guardianSlot + 1} ${getChar(guardianSlot).name} เข้าคุ้มกัน P${protectedSlot + 1} ${getChar(protectedSlot).name}`);
+    }
+
+    function cycleEnemyAffinity(enemyId, elemKey) {
+      const enemy = battleState.enemies.find(e => e.id === enemyId);
+      if (!enemy || !elemKey) return;
+      enemy.affinities = enemy.affinities || {};
+      const cur = enemy.affinities[elemKey] || '';
+      const next = AFFINITY_CYCLE[(AFFINITY_CYCLE.indexOf(cur) + 1) % AFFINITY_CYCLE.length];
+      if (next) enemy.affinities[elemKey] = next;
+      else delete enemy.affinities[elemKey];
+      saveBattleState();
+      renderBattleEnemyList();
+    }
+
+    function calcElementalDamage(rawDmg, affCode) {
+      const base = Math.max(0, Number(rawDmg) || 0);
+      switch (affCode) {
+        case 'VU': return { finalDmg: base * 2, note: 'VU x2' };
+        case 'RS': return { finalDmg: Math.floor(base / 2), note: 'RS ½' };
+        case 'AB': return { finalDmg: 0, note: 'AB ดูดซับ' };
+        case 'IM': return { finalDmg: 0, note: 'IM กันธาตุ' };
+        default:   return { finalDmg: base, note: 'ปกติ' };
+      }
+    }
+
+    function renderBattleArena() {
+      const turnBadge = document.getElementById('battleTurnBadge');
+      if (turnBadge) turnBadge.textContent = `TURN ${battleState.turn}`;
+
+      const targetSummary = document.getElementById('battleTargetSummary');
+      const targetEnemy = battleState.enemies.find(e => e.id === selectedEnemyId);
+      if (targetSummary) {
+        targetSummary.textContent = targetEnemy
+          ? `เป้าหมาย: ${targetEnemy.name} (DEF ${targetEnemy.def} / M.DEF ${targetEnemy.mdef})`
+          : 'เป้าหมาย: ไม่มีศัตรู';
+      }
+
+      const actorSel = document.getElementById('battleActorSelect');
+      if (actorSel) actorSel.value = String(battleActorSlot);
+
+      renderBattlePartyList();
+      renderBattleEnemyList();
+      renderBattleActorActions();
+      renderBattleLog();
+    }
+
+    function renderBattlePartyList() {
+      const cont = document.getElementById('battlePartyList');
+      if (!cont) return;
+      cont.innerHTML = party.map((c, idx) => {
+        const isSelected = battleActorSlot === idx;
+        const crisis = isInCrisis(c);
+        const isGuarding = battleState.guardCover?.active && battleState.guardCover.guardianSlot === idx;
+        const isCovered = battleState.guardCover?.active && battleState.guardCover.protectedSlot === idx;
+        const hpPct = Math.min(100, Math.max(0, (c.hp / Math.max(1, c.hpMax)) * 100));
+        return `
+          <div onclick="selectBattleActor(${idx})"
+            class="rounded p-2 border cursor-pointer transition ${crisis ? 'bg-[#351d22] border-rose-500' : isSelected ? 'bg-[#264b44] border-amber-400' : 'bg-[#152421] border-[#2e4d46] hover:bg-[#1e3430]'}">
+            <div class="flex items-center justify-between gap-1.5 flex-wrap">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-9 h-9 rounded border border-[#4c7d75] bg-[#101c19] overflow-hidden flex items-center justify-center flex-shrink-0">
+                  ${c.avatar
+                    ? `<img src="${escapeHtml(c.avatar)}" alt="${escapeHtml(c.name)}" class="w-full h-full object-cover">`
+                    : `<span class="text-sm">🧙</span>`
+                  }
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="bg-[#18302c] text-[#9ee0d3] font-bebas text-xs px-1.5 py-0.2 rounded">P${idx + 1}</span>
+                    <span class="font-bold text-xs truncate">${escapeHtml(c.name)}</span>
+                  </div>
+                  <div class="flex items-center gap-1 flex-wrap mt-0.5">
+                    ${crisis ? '<span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.2 rounded font-bold animate-pulse">🔥 CRISIS</span>' : ''}
+                    ${isGuarding ? '<span class="bg-sky-600 text-white text-[10px] px-1.5 py-0.2 rounded font-bold">🛡️ GUARDING</span>' : ''}
+                    ${isCovered ? '<span class="bg-indigo-600 text-white text-[10px] px-1.5 py-0.2 rounded font-bold">🔰 COVERED</span>' : ''}
+                  </div>
+                </div>
+              </div>
+              <span class="font-bebas text-xs text-gray-300">DEF ${c.def} · M.DEF ${c.mdef}</span>
+            </div>
+            <div class="mt-1 grid grid-cols-2 gap-1.5 text-[11px]">
+              <div>
+                <div class="flex justify-between text-rose-200"><span>HP</span><span>${c.hp}/${c.hpMax}</span></div>
+                <div class="h-1.5 bg-black/40 rounded overflow-hidden mt-0.5">
+                  <div class="h-full ${crisis ? 'bg-rose-400' : 'bg-rose-500'}" style="width:${hpPct}%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sky-200"><span>MP</span><span>${c.mp}/${c.mpMax}</span></div>
+                <div class="h-1.5 bg-black/40 rounded overflow-hidden mt-0.5">
+                  <div class="h-full bg-sky-400" style="width:${Math.min(100, Math.max(0, (c.mp / Math.max(1, c.mpMax)) * 100))}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const guardBanner = document.getElementById('activeGuardBanner');
+      if (guardBanner) {
+        if (battleState.guardCover?.active) {
+          const g = battleState.guardCover.guardianSlot;
+          const p = battleState.guardCover.protectedSlot;
+          guardBanner.classList.remove('hidden');
+          guardBanner.innerHTML = `🛡️ <strong>Guard / Cover ทำงาน:</strong> P${g + 1} (${escapeHtml(getChar(g).name)}) รับดาเมจแทน P${p + 1} (${escapeHtml(getChar(p).name)})`;
+        } else {
+          guardBanner.classList.add('hidden');
+          guardBanner.innerHTML = '';
+        }
+      }
+    }
+
+    function renderBattleEnemyList() {
+      const cont = document.getElementById('battleEnemyList');
+      if (!cont) return;
+      if (!battleState.enemies.length) {
+        cont.innerHTML = `<div class="text-xs text-gray-400 text-center py-4">ไม่มีศัตรู กด "+ เพิ่มศัตรู"</div>`;
+        return;
+      }
+
+      cont.innerHTML = battleState.enemies.map(enemy => {
+        const isTarget = enemy.id === selectedEnemyId;
+        const hpPct = Math.min(100, Math.max(0, (enemy.hp / Math.max(1, enemy.hpMax)) * 100));
+        const aff = enemy.affinities || {};
+        const affBadges = ELEMENTS.filter(el => aff[el.key]).map(el => `
+          <button type="button" onclick="event.stopPropagation(); cycleEnemyAffinity('${enemy.id}', '${el.key}')"
+            class="px-1 py-0.2 rounded text-[10px] bg-black/40 border border-white/15 cursor-pointer">
+            ${el.icon} <strong>${aff[el.key]}</strong>
+          </button>
+        `).join('');
+
+        return `
+          <div onclick="selectEnemy('${enemy.id}')"
+            class="rounded p-2 border cursor-pointer transition ${isTarget ? 'bg-[#352326] border-amber-400' : 'bg-[#152421] border-[#2e4d46] hover:bg-[#221c1d]'}">
+            <div class="flex items-center justify-between gap-1.5">
+              <div class="flex items-center gap-2 min-w-0">
+                <div class="w-10 h-10 rounded border border-[#5c4246] bg-[#101c19] overflow-hidden flex items-center justify-center flex-shrink-0" onclick="event.stopPropagation()">
+                  ${enemy.avatar
+                    ? `<img src="${escapeHtml(enemy.avatar)}" alt="${escapeHtml(enemy.name)}" class="w-full h-full object-cover">`
+                    : `<span class="text-base">👾</span>`
+                  }
+                </div>
+                <div class="min-w-0">
+                  <input type="text" value="${escapeHtml(enemy.name)}"
+                    onclick="event.stopPropagation()"
+                    oninput="updateEnemyField('${enemy.id}', 'name', this.value)"
+                    class="font-bold text-xs bg-transparent border-b border-transparent focus:border-white outline-none w-32">
+                  <div class="flex items-center gap-1.5 mt-0.5" onclick="event.stopPropagation()">
+                    <label class="text-[10px] text-amber-200 bg-black/35 px-1.5 py-0.2 rounded cursor-pointer hover:bg-black/55">
+                      🖼️ รูป<input type="file" accept="image/*" class="hidden" onchange="uploadEnemyAvatar('${enemy.id}', event)">
+                    </label>
+                    ${enemy.avatar ? `<button type="button" onclick="updateEnemyField('${enemy.id}', 'avatar', '')" class="text-[10px] text-rose-300 hover:text-white cursor-pointer">ลบ</button>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 text-[11px]">
+                <label onclick="event.stopPropagation()">DEF <input type="number" value="${enemy.def}" oninput="updateEnemyField('${enemy.id}', 'def', Number(this.value))" class="w-8 bg-black/30 rounded text-center"></label>
+                <label onclick="event.stopPropagation()">M.DEF <input type="number" value="${enemy.mdef}" oninput="updateEnemyField('${enemy.id}', 'mdef', Number(this.value))" class="w-8 bg-black/30 rounded text-center"></label>
+                <button type="button" onclick="event.stopPropagation(); removeEnemy('${enemy.id}')" class="text-rose-400 hover:text-white px-1 cursor-pointer">✕</button>
+              </div>
+            </div>
+            <div class="mt-1 flex items-center justify-between gap-2 text-[11px]">
+              <div class="flex-1">
+                <div class="flex justify-between text-amber-200">
+                  <span>HP</span>
+                  <span>
+                    <input type="number" value="${enemy.hp}" onclick="event.stopPropagation()"
+                      oninput="updateEnemyField('${enemy.id}', 'hp', Number(this.value))"
+                      class="w-9 bg-black/30 rounded text-center font-bold"> / ${enemy.hpMax}
+                  </span>
+                </div>
+                <div class="h-1.5 bg-black/40 rounded overflow-hidden mt-0.5">
+                  <div class="h-full bg-amber-400" style="width:${hpPct}%"></div>
+                </div>
+              </div>
+              <div class="flex gap-1" onclick="event.stopPropagation()">
+                <button type="button" onclick="updateEnemyField('${enemy.id}', 'hp', ${Math.max(0, enemy.hp - 5)})" class="bg-black/40 px-1.5 py-0.5 rounded text-[10px] cursor-pointer">-5</button>
+                <button type="button" onclick="updateEnemyField('${enemy.id}', 'hp', ${Math.min(enemy.hpMax, enemy.hp + 5)})" class="bg-black/40 px-1.5 py-0.5 rounded text-[10px] cursor-pointer">+5</button>
+              </div>
+            </div>
+            <div class="mt-1.5 flex flex-wrap items-center gap-1">
+              <span class="text-[10px] text-gray-400">ธาตุ:</span>
+              ${affBadges || '<span class="text-[10px] text-gray-500">ปกติ</span>'}
+              <select onchange="event.stopPropagation(); cycleEnemyAffinity('${enemy.id}', this.value); this.value=''"
+                class="bg-black/30 border border-white/10 rounded text-[10px] px-1 text-gray-300">
+                <option value="">+ ธาตุ</option>
+                ${ELEMENTS.map(el => `<option value="${el.key}">${el.icon} ${el.key}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderBattleActorActions() {
+      const cont = document.getElementById('battleActorActions');
+      if (!cont) return;
+      const c = getChar(battleActorSlot);
+      const targetEnemy = battleState.enemies.find(e => e.id === selectedEnemyId);
+
+      const weaponBtns = c.weapons.filter(w => w.equipped !== false).map(w => `
+        <button type="button" onclick="executeBattleWeaponAttack(${battleActorSlot}, '${w.id}', false)"
+          class="w-full text-left bg-[#233d38] hover:bg-[#2e524b] border border-[#45756c] rounded px-2 py-1.5 flex items-center justify-between cursor-pointer">
+          <span class="truncate font-semibold">⚔️ ${escapeHtml(w.name)}</span>
+          <span class="font-bebas text-amber-300">HR+${w.baseDmg}</span>
+        </button>
+      `).join('');
+
+      const offW = c.offHandWeapon;
+      const offBtn = (offW && offW.equipped !== false) ? `
+        <button type="button" onclick="executeBattleWeaponAttack(${battleActorSlot}, '${offW.id}', true)"
+          class="w-full text-left bg-amber-900/50 hover:bg-amber-800/60 border border-amber-500/50 rounded px-2 py-1.5 flex items-center justify-between cursor-pointer">
+          <span class="truncate font-semibold">🗡️ มือ 2: ${escapeHtml(offW.name)}</span>
+          <span class="font-bebas text-amber-200">HR อย่างเดียว</span>
+        </button>
+      ` : '';
+
+      const spellBtns = c.spells.map((sp, idx) => `
+        <button type="button" onclick="executeBattleSpell(${battleActorSlot}, ${idx})"
+          class="w-full text-left bg-indigo-950/70 hover:bg-indigo-900/80 border border-indigo-500/40 rounded px-2 py-1.5 flex items-center justify-between cursor-pointer">
+          <span class="truncate font-semibold">✨ ${escapeHtml(sp.name)}</span>
+          <span class="font-bebas text-sky-300">-${sp.mpCost || 0} MP</span>
+        </button>
+      `).join('');
+
+      cont.innerHTML = `
+        <div class="text-[11px] text-[#9ee0d3]">
+          ผู้กระทำ: <strong>P${battleActorSlot + 1} ${escapeHtml(c.name)}</strong> → เป้าหมาย: <strong>${targetEnemy ? escapeHtml(targetEnemy.name) : 'ยังไม่ได้เลือก'}</strong>
+        </div>
+        ${weaponBtns}
+        ${offBtn}
+        ${spellBtns}
+      `;
+    }
+
+    function executeBattleWeaponAttack(s, weaponId, isOffHand) {
+      const c = getChar(s);
+      const w = isOffHand ? c.offHandWeapon : c.weapons.find(item => item.id === weaponId);
+      if (!w) return;
+
+      const s1 = getDieSides(s, w.attr1);
+      const s2 = getDieSides(s, w.attr2);
+      const r1 = Math.floor(Math.random() * s1) + 1;
+      const r2 = Math.floor(Math.random() * s2) + 1;
+
+      const accBonus = Number(w.accBonus) || 0;
+      const acc = r1 + r2 + accBonus;
+      const hr = Math.max(r1, r2);
+      const baseDmg = Number(w.baseDmg) || 0;
+      const rawDmg = isOffHand ? hr : (hr + baseDmg);
+
+      const elObj = ELEMENTS.find(e => e.key === w.element) || ELEMENTS[0];
+      const isFumble = (r1 === 1 && r2 === 1);
+      const isCrit = (r1 === r2 && r1 >= 6);
+
+      displayRollResult(s, {
+        title: isOffHand ? `มือ 2 (HR ล้วน): ${w.name}` : `มือหลัก: ${w.name}`,
+        r1, s1, attr1: w.attr1.toUpperCase(),
+        r2, s2, attr2: w.attr2.toUpperCase(),
+        mod: accBonus,
+        totalCheck: acc,
+        highRoll: hr,
+        baseDmg,
+        totalDamage: rawDmg,
+        isOffHand: !!isOffHand,
+        elementText: `${elObj.icon} ${elObj.name}`,
+        isWeapon: true,
+        isCrit,
+        isFumble
+      });
+
+      const enemy = battleState.enemies.find(e => e.id === selectedEnemyId);
+      if (!enemy) {
+        pushBattleLog(`P${s + 1} ${c.name} โจมตีด้วย ${w.name} → แม่น ${acc} | ดาเมจ ${rawDmg}`);
+        return;
+      }
+      if (isFumble) {
+        pushBattleLog(`💥 FUMBLE! P${s + 1} ${c.name} พลาดเป้า!`);
+        return;
+      }
+      if (acc < enemy.def) {
+        pushBattleLog(`🛡️ MISS! P${s + 1} ${c.name} แม่น ${acc} < ${enemy.name} DEF ${enemy.def}`);
+        return;
+      }
+      const affCode = enemy.affinities?.[w.element] || '';
+      const { finalDmg, note } = calcElementalDamage(rawDmg, affCode);
+      enemy.hp = Math.max(0, Math.min(enemy.hpMax, enemy.hp - finalDmg));
+      saveBattleState();
+      renderBattleArena();
+      pushBattleLog(`⚔️ HIT! P${s + 1} ${c.name} (${acc} vs DEF ${enemy.def}) → ${enemy.name} รับดาเมจ ${finalDmg} (${note}) | HP เหลือ ${enemy.hp}/${enemy.hpMax}`);
+    }
+
+    function executeBattleSpell(s, spellIdx) {
+      const c = getChar(s);
+      const sp = c.spells[spellIdx];
+      if (!sp) return;
+      const cost = Math.max(0, Number(sp.mpCost) || 0);
+      if (c.mp < cost) {
+        displayRollResult(s, {
+          title: `ร่ายเวท ${sp.name}`,
+          isError: true,
+          errorMsg: `MP ไม่พอ! (มี ${c.mp} MP แต่ต้องใช้ ${cost} MP)`
+        });
+        pushBattleLog(`⚠️ P${s + 1} ${c.name} MP ไม่พอร่าย ${sp.name}`);
+        return;
+      }
+
+      c.mp = Math.max(0, c.mp - cost);
+      saveParty();
+      renderResourceBars(s);
+      renderBattlePartyList();
+
+      const enemy = battleState.enemies.find(e => e.id === selectedEnemyId);
+      if (sp.offensive) {
+        const a1 = sp.attr1 || 'ins';
+        const a2 = sp.attr2 || 'wlp';
+        const s1 = getDieSides(s, a1);
+        const s2 = getDieSides(s, a2);
+        const r1 = Math.floor(Math.random() * s1) + 1;
+        const r2 = Math.floor(Math.random() * s2) + 1;
+        const acc = r1 + r2;
+        const hr = Math.max(r1, r2);
+        const baseDmg = Number(sp.baseDmg) || 0;
+        const rawDmg = hr + baseDmg;
+        const elObj = ELEMENTS.find(e => e.key === sp.element) || ELEMENTS[0];
+        const isFumble = (r1 === 1 && r2 === 1);
+        const isCrit = (r1 === r2 && r1 >= 6);
+
+        displayRollResult(s, {
+          title: `ร่ายเวท ${sp.name} (-${cost} MP → เหลือ ${c.mp} MP)`,
+          r1, s1, attr1: a1.toUpperCase(),
+          r2, s2, attr2: a2.toUpperCase(),
+          mod: 0,
+          totalCheck: acc,
+          highRoll: hr,
+          baseDmg,
+          totalDamage: rawDmg,
+          elementText: `${elObj.icon} ${elObj.name}`,
+          isWeapon: true,
+          isCrit,
+          isFumble
+        });
+
+        if (!enemy) {
+          pushBattleLog(`✨ P${s + 1} ${c.name} ร่าย ${sp.name} (-${cost} MP) → แม่น ${acc} | ดาเมจ ${rawDmg}`);
+          return;
+        }
+        if (isFumble) {
+          pushBattleLog(`💥 SPELL FUMBLE! ${sp.name} พลาดเป้า!`);
+          return;
+        }
+        if (acc < enemy.mdef) {
+          pushBattleLog(`🔮 SPELL MISS! ${sp.name} (${acc} vs M.DEF ${enemy.mdef})`);
+          return;
+        }
+        const affCode = enemy.affinities?.[sp.element] || '';
+        const { finalDmg, note } = calcElementalDamage(rawDmg, affCode);
+        enemy.hp = Math.max(0, Math.min(enemy.hpMax, enemy.hp - finalDmg));
+        saveBattleState();
+        renderBattleArena();
+        pushBattleLog(`✨ ${sp.name} (${acc} vs M.DEF ${enemy.mdef}) → ${enemy.name} รับดาเมจ ${finalDmg} (${note}) | HP เหลือ ${enemy.hp}/${enemy.hpMax}`);
+      } else {
+        displayRollResult(s, {
+          title: `ร่ายเวท ${sp.name} (-${cost} MP → เหลือ ${c.mp} MP)`,
+          isSupportSpell: true,
+          desc: sp.desc || `ใช้ ${cost} MP สำเร็จ (MP คงเหลือ ${c.mp}/${c.mpMax})`
+        });
+        pushBattleLog(`✨ P${s + 1} ${c.name} ร่าย ${sp.name} (-${cost} MP → เหลือ ${c.mp}/${c.mpMax})`);
+      }
+    }
+
+    function applyIncomingDamageToPlayer() {
+      const intendedIdx = Number(document.getElementById('incomingTargetPlayer')?.value) || 0;
+      const rawDmg = Math.max(0, Number(document.getElementById('incomingDmgInput')?.value) || 0);
+      const elemKey = document.getElementById('incomingElemSelect')?.value || 'physical';
+
+      let actualTargetIdx = intendedIdx;
+      let coverNote = '';
+      if (battleState.guardCover?.active && battleState.guardCover.protectedSlot === intendedIdx) {
+        actualTargetIdx = battleState.guardCover.guardianSlot;
+        coverNote = ` [🛡️ Guard/Cover โดย P${actualTargetIdx + 1} แทน P${intendedIdx + 1}]`;
+        battleState.guardCover = null;
+        saveBattleState();
+      }
+
+      const c = getChar(actualTargetIdx);
+      const wasCrisis = isInCrisis(c);
+      const affCode = c.affinities?.[elemKey] || '';
+      const { finalDmg, note } = calcElementalDamage(rawDmg, affCode);
+
+      c.hp = Math.max(0, Math.min(c.hpMax, c.hp - finalDmg));
+      const nowCrisis = isInCrisis(c);
+      saveParty();
+      renderParty();
+      renderBattleArena();
+
+      const crisisMsg = (!wasCrisis && nowCrisis) ? ' 🔥 เข้าสู่สถานะ CRISIS! (HP ≤ 50%)' : '';
+      pushBattleLog(`💥 P${actualTargetIdx + 1} ${c.name}${coverNote} รับดาเมจ ${finalDmg} (${note}) → HP เหลือ ${c.hp}/${c.hpMax}${crisisMsg}`);
+    }
+
+    /* --- Player Card Rendering & Sub-components --- */
+    function buildPlayerCardHTML(s) {
+      const c = getChar(s);
+      const activeTab = activeTabs[s] || 'sheet';
+      const hasStatus = STATUS_LIST.some(st => c.statuses?.[st.key]);
+
+      const tabButtons = [
+        { id: 'sheet', label: 'Character Sheet' },
+        { id: 'information', label: 'Information' },
+        { id: 'stats', label: 'Stats' },
+        { id: 'classes', label: 'Classes' },
+        { id: 'spells', label: 'Spells' },
+        { id: 'backpack', label: 'Backpack' },
+        { id: 'notes', label: 'Notes' },
+        { id: 'effects', label: 'Effects' },
+        { id: 'settings', label: '⚙️' }
+      ].map(t => {
+        const isAct = activeTab === t.id;
+        return `
+          <button type="button" onclick="switchTab(${s}, '${t.id}')"
+            class="px-2.5 py-1 rounded-md font-bold text-xs transition-all whitespace-nowrap cursor-pointer ${isAct ? 'bg-[#354f47] text-white' : 'text-gray-200 hover:bg-[#283e37]'}">
+            ${t.label}${t.id === 'stats' && hasStatus ? ' <span class="inline-block w-2 h-2 rounded-full bg-amber-400 align-middle"></span>' : ''}
+          </button>
+        `;
+      }).join('');
+
+      return `
+        <div class="bg-[#f3f7f6] rounded-lg shadow-2xl border-2 border-[#7ba39b] overflow-hidden flex flex-col">
+          <header class="fu-header-grad px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#1b3632]">
+            <div class="flex items-center gap-2 flex-1 min-w-[180px]">
+              <span class="bg-[#18302c]/85 text-white font-bebas text-sm px-2 py-0.5 rounded border border-[#5d8c84]">P${s + 1}</span>
+              <input id="charNameInput-${s}" type="text" value="${escapeHtml(c.name)}" oninput="updateField(${s}, 'name', this.value)"
+                class="font-bebas text-2xl text-white bg-transparent border-b border-transparent hover:border-white/40 focus:border-white outline-none w-full uppercase tracking-wide"
+                placeholder="ชื่อตัวละคร">
+            </div>
+            <div class="flex items-center gap-2 bg-white/95 text-[#21403b] px-2.5 py-0.5 rounded shadow-sm font-bebas text-base">
+              <span>LVL</span>
+              <input id="charLevelInput-${s}" type="number" min="1" max="60" value="${c.level}" oninput="updateField(${s}, 'level', Number(this.value))"
+                class="w-7 text-center font-bold bg-[#eef4f2] rounded outline-none">
+              ${party.length > 1 ? `<button type="button" onclick="removeCharacter(${s})" title="ลบตัวละครนี้" class="text-rose-600 hover:text-rose-800 text-xs font-sans font-bold px-1 cursor-pointer">✕</button>` : ''}
+            </div>
+          </header>
+
+          <nav class="bg-[#1b2e28] px-2 py-1.5 flex items-center gap-1 overflow-x-auto select-none border-b border-[#12201c]">
+            ${tabButtons}
+          </nav>
+
+          <!-- TAB 1: CHARACTER SHEET -->
+          <main id="tab-${s}-sheet" class="${activeTab === 'sheet' ? '' : 'hidden'} p-3 space-y-2.5 flex-1">
+            <div class="bg-white rounded-md border border-[#c6dad6] shadow-sm overflow-hidden">
+              <div class="p-2.5 flex flex-col sm:flex-row gap-2.5">
+                <div class="relative group w-24 h-24 sm:w-28 sm:h-28 mx-auto sm:mx-0 flex-shrink-0 rounded border border-[#c6dad6] bg-[#f4f8f7] flex flex-col items-center justify-center overflow-hidden">
+                  <img id="avatarImg-${s}" src="" alt="" class="w-full h-full object-cover hidden">
+                  <div id="avatarPlaceholder-${s}" class="flex flex-col items-center justify-center text-[#789690] p-1 text-center">
+                    <span class="text-2xl mb-0.5">👤</span>
+                    <span class="text-[10px] font-medium leading-tight">Player Avatar</span>
+                  </div>
+                  <div class="absolute inset-x-0 bottom-0 bg-[#1b3632]/90 py-1 px-1 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label class="text-[10px] text-white bg-[#3c6e66] px-1.5 py-0.5 rounded cursor-pointer">
+                      รูป<input type="file" accept="image/*" class="hidden" onchange="handleAvatarUpload(${s}, event)">
+                    </label>
+                    <button type="button" onclick="clearAvatar(${s})" class="text-[10px] text-rose-200 bg-rose-900/80 px-1.5 py-0.5 rounded cursor-pointer">ลบ</button>
+                  </div>
+                </div>
+
+                <div class="flex-1 flex flex-col justify-between gap-1.5 min-w-0">
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                    <button type="button" onclick="openCheckModal(${s}, 'GROUP CHECK')" class="bg-white hover:bg-[#e8f2f0] border border-[#cddedb] rounded px-1.5 py-1 flex items-center justify-center gap-1.5 cursor-pointer">
+                      <span>🎲</span><span class="font-bebas text-xs leading-none text-left">GROUP<br>CHECK</span>
+                    </button>
+                    <button type="button" onclick="openCheckModal(${s}, 'ATTRIBUTE CHECK')" class="bg-white hover:bg-[#e8f2f0] border border-[#cddedb] rounded px-1.5 py-1 flex items-center justify-center gap-1.5 cursor-pointer">
+                      <span>🎯</span><span class="font-bebas text-xs leading-none text-left">ATTRIBUTE<br>CHECK</span>
+                    </button>
+                    <button type="button" onclick="openCheckModal(${s}, 'OPEN CHECK')" class="bg-white hover:bg-[#e8f2f0] border border-[#cddedb] rounded px-1.5 py-1 flex items-center justify-center gap-1.5 cursor-pointer">
+                      <span>📖</span><span class="font-bebas text-xs leading-none text-left">OPEN<br>CHECK</span>
+                    </button>
+                    <button type="button" onclick="openCheckModal(${s}, 'OPPOSED CHECK')" class="bg-white hover:bg-[#e8f2f0] border border-[#cddedb] rounded px-1.5 py-1 flex items-center justify-center gap-1.5 cursor-pointer">
+                      <span>⚔️</span><span class="font-bebas text-xs leading-none text-left">OPPOSED<br>CHECK</span>
+                    </button>
+                  </div>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                    <div onclick="switchTab(${s}, 'stats')" class="bg-[#254742] hover:bg-[#2f5953] cursor-pointer text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span>🥾 DEX</span><span id="disp-${s}-dex" class="font-bold">D8</span>
+                    </div>
+                    <div onclick="switchTab(${s}, 'stats')" class="bg-[#254742] hover:bg-[#2f5953] cursor-pointer text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span>💡 INS</span><span id="disp-${s}-ins" class="font-bold">D8</span>
+                    </div>
+                    <div onclick="switchTab(${s}, 'stats')" class="bg-[#254742] hover:bg-[#2f5953] cursor-pointer text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span>✊ MIG</span><span id="disp-${s}-mig" class="font-bold">D8</span>
+                    </div>
+                    <div onclick="switchTab(${s}, 'stats')" class="bg-[#254742] hover:bg-[#2f5953] cursor-pointer text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span>🔥 WLP</span><span id="disp-${s}-wlp" class="font-bold">D8</span>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                    <div class="bg-[#254742] text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span>🛡️ DEF</span>
+                      <input id="stat-${s}-def" type="number" value="${c.def}" oninput="updateField(${s}, 'def', Number(this.value))" class="w-7 bg-transparent text-center font-bold outline-none">
+                    </div>
+                    <div class="bg-[#254742] text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span>🔮 M.DEF</span>
+                      <input id="stat-${s}-mdef" type="number" value="${c.mdef}" oninput="updateField(${s}, 'mdef', Number(this.value))" class="w-7 bg-transparent text-center font-bold outline-none">
+                    </div>
+                    <div class="bg-[#254742] text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span>⏱️ INIT</span>
+                      <input id="stat-${s}-init" type="number" value="${c.init}" oninput="updateField(${s}, 'init', Number(this.value))" class="w-7 bg-transparent text-center font-bold outline-none">
+                    </div>
+                    <div class="bg-[#254742] text-white rounded px-2 py-1 flex items-center justify-center gap-1 font-bebas text-sm">
+                      <span class="text-pink-400">♦</span><span>FP</span>
+                      <input id="stat-${s}-fp-top" type="number" min="0" max="10" value="${c.fp}" oninput="setFP(${s}, Number(this.value))" class="w-6 bg-transparent text-center font-bold outline-none">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="affinitiesBar-${s}" class="grid grid-cols-9 border-t border-[#d4e3e0] bg-[#fafdfc] divide-x divide-[#e4efed]"></div>
+            </div>
+
+            <div class="bg-[#1e1e1e] text-white rounded-md border border-[#354f47] px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div class="flex flex-wrap items-center gap-1">
+                <span class="font-bebas text-xs text-[#9ee0d3] tracking-wider">STATUSES:</span>
+                <div id="activeStatusBadges-${s}" class="flex flex-wrap gap-1"></div>
+                ${isInCrisis(c) ? '<span class="px-1.5 py-0.2 rounded text-[11px] bg-rose-600 text-white font-bold animate-pulse">🔥 CRISIS (HP ≤ 50%)</span>' : ''}
+              </div>
+              <button type="button" onclick="switchTab(${s}, 'stats')" class="bg-[#2c4c43] hover:bg-[#3a6357] text-white px-2 py-0.5 rounded text-[11px] cursor-pointer">
+                + สถานะ
+              </button>
+            </div>
+
+            <!-- RESOURCES -->
+            <section class="bg-white rounded-md border border-[#c6dad6] shadow-sm overflow-hidden">
+              <div class="bg-[#254742] text-white px-2.5 py-1 flex items-center justify-between">
+                <span class="font-bebas text-sm tracking-wider">RESOURCES</span>
+                <button type="button" onclick="restoreAllResources(${s})" class="bg-[#3b6962] hover:bg-[#4d857c] text-white text-[11px] px-2 py-0.5 rounded border border-[#689c94] cursor-pointer">
+                  ฟื้นฟูเต็ม
+                </button>
+              </div>
+              <div class="p-2 space-y-1.5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div class="flex items-center h-7 rounded border border-[#b4c9c4] overflow-hidden bg-[#e5ecea]">
+                    <div class="bg-[#dce7e4] px-2 h-full flex items-center gap-1 font-bebas text-xs text-[#1a2624] border-r border-[#b4c9c4] w-14 flex-shrink-0">
+                      <span>❤️</span><span>HP</span>
+                    </div>
+                    <div class="relative flex-1 h-full bg-[#d6dfdd]">
+                      <div id="hpBarFill-${s}" class="h-full transition-all duration-200" style="width: 100%; background: linear-gradient(90deg, #f3b5b5 0%, #c92a2a 100%);"></div>
+                      <div class="absolute inset-0 flex items-center justify-between px-1 opacity-0 hover:opacity-100 transition-opacity bg-black/10">
+                        <button type="button" onclick="adjustResource(${s}, 'hp', -5)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">-5</button>
+                        <button type="button" onclick="adjustResource(${s}, 'hp', -1)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">-1</button>
+                        <button type="button" onclick="adjustResource(${s}, 'hp', 1)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">+1</button>
+                        <button type="button" onclick="adjustResource(${s}, 'hp', 5)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">+5</button>
+                      </div>
+                    </div>
+                    <div class="bg-[#647370] text-white font-bebas text-xs h-full px-1.5 flex items-center gap-0.5 flex-shrink-0">
+                      <input id="res-${s}-hp" type="number" value="${c.hp}" oninput="updateResource(${s}, 'hp', Number(this.value))" class="w-7 bg-transparent text-center outline-none">
+                      <span>/</span>
+                      <input id="res-${s}-hpMax" type="number" value="${c.hpMax}" oninput="updateResource(${s}, 'hpMax', Number(this.value))" class="w-7 bg-transparent text-center outline-none">
+                    </div>
+                  </div>
+
+                  <div class="flex items-center h-7 rounded border border-[#b4c9c4] overflow-hidden bg-[#e5ecea]">
+                    <div class="bg-[#dce7e4] px-2 h-full flex items-center gap-1 font-bebas text-xs text-[#1a2624] border-r border-[#b4c9c4] w-14 flex-shrink-0">
+                      <span>💧</span><span>MP</span>
+                    </div>
+                    <div class="relative flex-1 h-full bg-[#d6dfdd]">
+                      <div id="mpBarFill-${s}" class="h-full transition-all duration-200" style="width: 100%; background: linear-gradient(90deg, #b8dcf2 0%, #1982c4 100%);"></div>
+                      <div class="absolute inset-0 flex items-center justify-between px-1 opacity-0 hover:opacity-100 transition-opacity bg-black/10">
+                        <button type="button" onclick="adjustResource(${s}, 'mp', -5)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">-5</button>
+                        <button type="button" onclick="adjustResource(${s}, 'mp', -1)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">-1</button>
+                        <button type="button" onclick="adjustResource(${s}, 'mp', 1)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">+1</button>
+                        <button type="button" onclick="adjustResource(${s}, 'mp', 5)" class="bg-black/60 text-white text-[10px] px-1 rounded cursor-pointer">+5</button>
+                      </div>
+                    </div>
+                    <div class="bg-[#647370] text-white font-bebas text-xs h-full px-1.5 flex items-center gap-0.5 flex-shrink-0">
+                      <input id="res-${s}-mp" type="number" value="${c.mp}" oninput="updateResource(${s}, 'mp', Number(this.value))" class="w-7 bg-transparent text-center outline-none">
+                      <span>/</span>
+                      <input id="res-${s}-mpMax" type="number" value="${c.mpMax}" oninput="updateResource(${s}, 'mpMax', Number(this.value))" class="w-7 bg-transparent text-center outline-none">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div class="flex items-center h-7 rounded border border-[#b4c9c4] overflow-hidden bg-[#e5ecea]">
+                    <div class="bg-[#dce7e4] px-2 h-full flex items-center gap-1 font-bebas text-xs text-[#1a2624] border-r border-[#b4c9c4] w-14 flex-shrink-0">
+                      <span>🎒</span><span>IP</span>
+                    </div>
+                    <div class="relative flex-1 h-full bg-[#d6dfdd]">
+                      <div id="ipBarFill-${s}" class="h-full transition-all duration-200" style="width: 100%; background: linear-gradient(90deg, #87b989 0%, #3b7a3e 100%);"></div>
+                    </div>
+                    <div class="bg-[#647370] text-white font-bebas text-xs h-full px-1.5 flex items-center gap-0.5 flex-shrink-0">
+                      <input id="res-${s}-ip" type="number" value="${c.ip}" oninput="updateResource(${s}, 'ip', Number(this.value))" class="w-6 bg-transparent text-center outline-none">
+                      <span>/</span>
+                      <input id="res-${s}-ipMax" type="number" value="${c.ipMax}" oninput="updateResource(${s}, 'ipMax', Number(this.value))" class="w-6 bg-transparent text-center outline-none">
+                    </div>
+                  </div>
+
+                  <div class="flex items-center h-7 rounded border border-[#b4c9c4] overflow-hidden bg-[#e5ecea]">
+                    <div class="bg-[#dce7e4] px-2 h-full flex items-center gap-1 font-bebas text-xs text-[#1a2624] border-r border-[#b4c9c4] w-14 flex-shrink-0">
+                      <span class="text-pink-600">♦</span><span>FP</span>
+                    </div>
+                    <div id="fpDiamondsContainer-${s}" class="flex-1 h-full bg-white flex items-center justify-center gap-1 px-2 select-none"></div>
+                    <div class="bg-[#647370] text-white font-bebas text-xs h-full px-2.5 flex items-center justify-center flex-shrink-0">
+                      <span id="res-${s}-fp-display">${c.fp}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center h-7 rounded border border-[#b4c9c4] overflow-hidden bg-[#a6b2af]">
+                  <div class="bg-[#dce7e4] px-2 h-full flex items-center gap-1 font-bebas text-xs text-[#1a2624] border-r border-[#b4c9c4] w-14 flex-shrink-0">
+                    <span>💰</span><span>Z</span>
+                  </div>
+                  <div class="flex-1 h-full bg-[#9ca8a5]"></div>
+                  <div class="bg-[#647370] text-white font-bebas text-xs h-full px-2.5 flex items-center justify-center flex-shrink-0">
+                    <input id="res-${s}-zenit" type="number" value="${c.zenit}" oninput="updateField(${s}, 'zenit', Number(this.value))" class="w-16 bg-transparent text-center outline-none">
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- QUICK WEAPONS & SPELLS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <section class="bg-white rounded-md border border-[#c6dad6] shadow-sm overflow-hidden">
+                <div class="bg-[#254742] text-white px-2.5 py-1 flex items-center justify-between">
+                  <span class="font-bebas text-sm tracking-wider">⚔️ WEAPONS (มือหลัก HR+ฐาน / มือ 2 HR ล้วน)</span>
+                  <button type="button" onclick="switchTab(${s}, 'backpack')" class="text-[10px] text-[#b8e0d8] hover:text-white underline cursor-pointer">+ อาวุธ</button>
+                </div>
+                <div id="quickWeaponsList-${s}" class="p-2 space-y-1.5"></div>
+              </section>
+
+              <section class="bg-white rounded-md border border-[#c6dad6] shadow-sm overflow-hidden">
+                <div class="bg-[#254742] text-white px-2.5 py-1 flex items-center justify-between">
+                  <span class="font-bebas text-sm tracking-wider">✨ SPELLS (ร่ายเวท -MP)</span>
+                  <button type="button" onclick="switchTab(${s}, 'spells')" class="text-[10px] text-[#b8e0d8] hover:text-white underline cursor-pointer">+ เวท</button>
+                </div>
+                <div id="quickSpellsList-${s}" class="p-2 space-y-1.5"></div>
+              </section>
+            </div>
+          </main>
+
+          <!-- OTHER TABS -->
+          <section id="tab-${s}-information" class="${activeTab === 'information' ? '' : 'hidden'} p-3 space-y-2.5 flex-1 text-xs">
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 space-y-2">
+              <div class="font-bebas text-base text-[#254742]">🎭 TRAITS & IDENTITY</div>
+              <input type="text" value="${escapeHtml(c.identity || '')}" oninput="updateField(${s}, 'identity', this.value)" placeholder="Identity" class="w-full border border-[#d5e3e0] rounded px-2.5 py-1.5">
+              <div class="grid grid-cols-2 gap-2">
+                <input type="text" value="${escapeHtml(c.theme || '')}" oninput="updateField(${s}, 'theme', this.value)" placeholder="Theme" class="w-full border border-[#d5e3e0] rounded px-2.5 py-1.5">
+                <input type="text" value="${escapeHtml(c.origin || '')}" oninput="updateField(${s}, 'origin', this.value)" placeholder="Origin" class="w-full border border-[#d5e3e0] rounded px-2.5 py-1.5">
+              </div>
+            </div>
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bebas text-base text-[#254742]">🤝 BONDS</span>
+                <button type="button" onclick="addBond(${s})" class="bg-[#254742] text-white px-2.5 py-0.5 rounded cursor-pointer">+ Bond</button>
+              </div>
+              <div id="bondsContainer-${s}" class="space-y-1.5"></div>
+            </div>
+          </section>
+
+          <section id="tab-${s}-stats" class="${activeTab === 'stats' ? '' : 'hidden'} p-3 space-y-2.5 flex-1 text-xs">
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3">
+              <div class="font-bebas text-base text-[#254742] mb-2">📊 BASE ATTRIBUTES</div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                ${['dex','ins','mig','wlp'].map(a => `
+                  <div class="bg-[#f4f8f7] border border-[#c6dad6] rounded p-2 text-center">
+                    <div class="font-bebas text-sm text-[#254742]">${a.toUpperCase()}</div>
+                    <select id="base-attr-${s}-${a}" onchange="updateBaseAttr(${s}, '${a}', this.value)" class="mt-1 w-full border border-[#b8ceca] rounded py-1 text-center font-bebas text-base bg-white">
+                      ${DIE_STEPS.map(d => `<option value="${d}" ${c.attributes[a]===d?'selected':''}>${d.toUpperCase()}</option>`).join('')}
+                    </select>
+                    <div id="eff-note-${s}-${a}" class="text-[11px] mt-1 text-[#477870]"></div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="bg-[#1e1e1e] text-white rounded-md border border-[#3a524b] overflow-hidden">
+              <div class="bg-[#2c4c43] px-3 py-1 flex items-center justify-between">
+                <span class="font-bebas text-base">STATUSES</span>
+                <button type="button" onclick="clearAllStatuses(${s})" class="text-[11px] text-[#b8e0d8] underline cursor-pointer">ล้างสถานะ</button>
+              </div>
+              <div id="statusesGrid-${s}" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+            </div>
+
+            <div class="bg-[#1e1e1e] text-white rounded-md border border-[#3a524b] overflow-hidden">
+              <div class="bg-[#2c4c43] px-3 py-1">
+                <span class="font-bebas text-base">STATUS EFFECT IMMUNITIES</span>
+              </div>
+              <div id="immunitiesGrid-${s}" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+            </div>
+          </section>
+
+          <section id="tab-${s}-classes" class="${activeTab === 'classes' ? '' : 'hidden'} p-3 space-y-2 flex-1 text-xs">
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bebas text-base text-[#254742]">📜 CLASSES & SKILLS</span>
+                <button type="button" onclick="addClass(${s})" class="bg-[#254742] text-white px-2.5 py-0.5 rounded cursor-pointer">+ คลาส</button>
+              </div>
+              <div id="classesContainer-${s}" class="space-y-2"></div>
+            </div>
+          </section>
+
+          <section id="tab-${s}-spells" class="${activeTab === 'spells' ? '' : 'hidden'} p-3 space-y-2 flex-1 text-xs">
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bebas text-base text-[#254742]">✨ SPELLS (ร่ายแล้วหัก MP ทันที)</span>
+                <button type="button" onclick="addSpell(${s})" class="bg-indigo-700 text-white px-2.5 py-0.5 rounded cursor-pointer">+ เวทมนตร์</button>
+              </div>
+              <div id="spellsContainer-${s}" class="space-y-2"></div>
+            </div>
+          </section>
+
+          <section id="tab-${s}-backpack" class="${activeTab === 'backpack' ? '' : 'hidden'} p-3 space-y-2.5 flex-1 text-xs">
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 space-y-2">
+              <div class="font-bebas text-base text-[#254742]">🛡️ ARMOR & SHIELD</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div class="border border-[#d5e3e0] rounded p-2 bg-[#f9fcfb] space-y-1">
+                  <input type="text" value="${escapeHtml(c.gear.armor.name)}" oninput="updateGear(${s}, 'armor', 'name', this.value)" placeholder="เกราะ" class="w-full border rounded px-2 py-0.5 bg-white">
+                  <div class="flex gap-2">
+                    <label>DEF+<input type="number" value="${c.gear.armor.def}" oninput="updateGear(${s}, 'armor', 'def', Number(this.value))" class="w-10 border rounded text-center bg-white"></label>
+                    <label>M.DEF+<input type="number" value="${c.gear.armor.mdef}" oninput="updateGear(${s}, 'armor', 'mdef', Number(this.value))" class="w-10 border rounded text-center bg-white"></label>
+                    <label class="flex items-center gap-1"><input type="checkbox" ${c.gear.armor.martial?'checked':''} onchange="updateGear(${s}, 'armor', 'martial', this.checked)"> หนัก</label>
+                  </div>
+                </div>
+                <div class="border border-[#d5e3e0] rounded p-2 bg-[#f9fcfb] space-y-1">
+                  <input type="text" value="${escapeHtml(c.gear.shield.name)}" oninput="updateGear(${s}, 'shield', 'name', this.value)" placeholder="โล่" class="w-full border rounded px-2 py-0.5 bg-white">
+                  <div class="flex gap-2">
+                    <label>DEF+<input type="number" value="${c.gear.shield.def}" oninput="updateGear(${s}, 'shield', 'def', Number(this.value))" class="w-10 border rounded text-center bg-white"></label>
+                    <label>M.DEF+<input type="number" value="${c.gear.shield.mdef}" oninput="updateGear(${s}, 'shield', 'mdef', Number(this.value))" class="w-10 border rounded text-center bg-white"></label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bebas text-base text-[#254742]">⚔️ WEAPONS (มือหลัก HR+ฐาน / มือ 2 HR อย่างเดียว)</span>
+                <button type="button" onclick="addWeapon(${s})" class="bg-amber-600 text-white px-2.5 py-0.5 rounded cursor-pointer">+ อาวุธมือหลัก</button>
+              </div>
+              <div id="weaponsEditorList-${s}" class="space-y-1.5"></div>
+            </div>
+          </section>
+
+          <section id="tab-${s}-notes" class="${activeTab === 'notes' ? '' : 'hidden'} p-3 flex-1">
+            <textarea oninput="updateField(${s}, 'notes', this.value)" rows="6" placeholder="บันทึก..." class="w-full h-full bg-white border border-[#c6dad6] rounded p-2.5 text-xs outline-none">${escapeHtml(c.notes || '')}</textarea>
+          </section>
+
+          <section id="tab-${s}-effects" class="${activeTab === 'effects' ? '' : 'hidden'} p-3 space-y-2 flex-1 text-xs">
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="font-bebas text-base text-[#254742]">⚡ EFFECTS</span>
+                <button type="button" onclick="addEffect(${s})" class="bg-[#254742] text-white px-2.5 py-0.5 rounded cursor-pointer">+ Effect</button>
+              </div>
+              <div id="effectsContainer-${s}" class="space-y-1.5"></div>
+            </div>
+          </section>
+
+          <section id="tab-${s}-settings" class="${activeTab === 'settings' ? '' : 'hidden'} p-3 space-y-2 flex-1 text-xs">
+            <div class="bg-white rounded-md border border-[#c6dad6] p-3 flex items-center justify-between">
+              <span class="font-bold text-rose-700">รีเซ็ตข้อมูล P${s + 1}</span>
+              <button type="button" onclick="resetCharacter(${s})" class="bg-rose-600 text-white px-3 py-1 rounded cursor-pointer">รีเซ็ต</button>
+            </div>
+          </section>
+
+          <!-- Persistent Roll Bar per Player -->
+          <div class="mx-3 mb-3 bg-[#182926] text-white rounded-md p-2.5 border border-[#3c6b63]">
+            <div class="flex items-center justify-between border-b border-white/15 pb-1 mb-1.5">
+              <span id="rollResultTitle-${s}" class="font-bebas text-base text-[#9ee0d3]">🎲 P${s + 1} DICE & HR</span>
+              <span id="rollSpecialBadge-${s}" class="hidden text-[11px] font-bold px-2 py-0.2 rounded"></span>
+              <button type="button" onclick="clearDiceLog(${s})" class="text-[10px] text-gray-400 hover:text-white cursor-pointer">ล้าง</button>
+            </div>
+            <div id="rollResultBody-${s}" class="text-xs text-gray-300">กดปุ่มทอยโจมตีอาวุธ / ร่ายเวท / Check</div>
+            <div id="diceLogList-${s}" class="mt-1.5 pt-1.5 border-t border-white/10 space-y-0.5 max-h-20 overflow-y-auto text-[11px] text-gray-300 hidden"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderParty() {
+      const container = document.getElementById('partyContainer');
+      const indices = viewMode === 'grid' ? party.map((_, idx) => idx) : [singleFocusSlot];
+      container.innerHTML = indices.map(s => buildPlayerCardHTML(s)).join('');
+      indices.forEach(s => renderPlayerSubComponents(s));
+    }
+
+    function renderPlayerSubComponents(s) {
+      renderAvatar(s);
+      renderEffectiveAttributes(s);
+      renderAffinities(s);
+      renderResourceBars(s);
+      renderQuickWeapons(s);
+      renderQuickSpells(s);
+      renderStatuses(s);
+      renderClasses(s);
+      renderSpells(s);
+      renderWeaponsEditor(s);
+      renderEffects(s);
+      renderTraitsAndBonds(s);
+      renderDiceLog(s);
+    }
+
+    function switchTab(s, tabName) {
+      activeTabs[s] = tabName;
+      renderParty();
+    }
+
+    function updateField(s, field, value) {
+      getChar(s)[field] = value;
+      saveParty();
+      syncPartySelectors();
+    }
+
+    function updateBaseAttr(s, attrKey, value) {
+      getChar(s).attributes[attrKey] = value;
+      saveParty();
+      renderPlayerSubComponents(s);
+    }
+
+    function renderAvatar(s) {
+      const c = getChar(s);
+      const img = document.getElementById(`avatarImg-${s}`);
+      const ph = document.getElementById(`avatarPlaceholder-${s}`);
+      if (!img || !ph) return;
+      if (c.avatar) {
+        img.src = c.avatar;
+        img.classList.remove('hidden');
+        ph.classList.add('hidden');
+      } else {
+        img.src = '';
+        img.classList.add('hidden');
+        ph.classList.remove('hidden');
+      }
+    }
+
+    function handleAvatarUpload(s, event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        getChar(s).avatar = e.target.result;
+        saveParty();
+        renderAvatar(s);
+        renderBattlePartyList();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAvatar(s) {
+      getChar(s).avatar = '';
+      saveParty();
+      renderAvatar(s);
+      renderBattlePartyList();
+    }
+
+    function renderEffectiveAttributes(s) {
+      const c = getChar(s);
+      ['dex', 'ins', 'mig', 'wlp'].forEach(a => {
+        const eff = getEffectiveDie(s, a).toUpperCase();
+        const disp = document.getElementById(`disp-${s}-${a}`);
+        if (disp) disp.textContent = eff;
+        const note = document.getElementById(`eff-note-${s}-${a}`);
+        if (note) note.textContent = `ปัจจุบัน: ${eff}`;
+      });
+
+      const badges = document.getElementById(`activeStatusBadges-${s}`);
+      if (!badges) return;
+      const active = STATUS_LIST.filter(st => c.statuses?.[st.key]);
+      if (active.length === 0) {
+        badges.innerHTML = `<span class="text-gray-400">ปกติ</span>`;
+      } else {
+        badges.innerHTML = active.map(st => `
+          <span class="px-1.5 py-0.2 rounded text-[11px] ${st.negative ? 'bg-rose-900 text-rose-200' : 'bg-emerald-900 text-emerald-200'}">
+            ${st.label}
+          </span>
+        `).join('');
+      }
+    }
+
+    function renderAffinities(s) {
+      const c = getChar(s);
+      const bar = document.getElementById(`affinitiesBar-${s}`);
+      if (!bar) return;
+      bar.innerHTML = ELEMENTS.map(el => {
+        const st = c.affinities[el.key] || '';
+        return `
+          <button type="button" onclick="cycleAffinity(${s}, '${el.key}')" title="${el.name}"
+            class="py-1 flex flex-col items-center justify-center hover:bg-[#eef5f3] cursor-pointer">
+            <span class="text-xs leading-none">${el.icon}</span>
+            <span class="font-bebas text-[9px] leading-none mt-0.5 h-2 text-[#254742]">${st}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function cycleAffinity(s, key) {
+      const c = getChar(s);
+      const cur = c.affinities[key] || '';
+      c.affinities[key] = AFFINITY_CYCLE[(AFFINITY_CYCLE.indexOf(cur) + 1) % AFFINITY_CYCLE.length];
+      saveParty();
+      renderAffinities(s);
+    }
+
+    function renderResourceBars(s) {
+      const c = getChar(s);
+      const setVal = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v;
+      };
+      setVal(`res-${s}-hp`, c.hp);
+      setVal(`res-${s}-hpMax`, c.hpMax);
+      setVal(`res-${s}-mp`, c.mp);
+      setVal(`res-${s}-mpMax`, c.mpMax);
+      setVal(`res-${s}-ip`, c.ip);
+      setVal(`res-${s}-ipMax`, c.ipMax);
+      setVal(`res-${s}-zenit`, c.zenit);
+
+      const hpFill = document.getElementById(`hpBarFill-${s}`);
+      const mpFill = document.getElementById(`mpBarFill-${s}`);
+      const ipFill = document.getElementById(`ipBarFill-${s}`);
+      if (hpFill) hpFill.style.width = `${Math.min(100, Math.max(0, (c.hp / Math.max(1, c.hpMax)) * 100))}%`;
+      if (mpFill) mpFill.style.width = `${Math.min(100, Math.max(0, (c.mp / Math.max(1, c.mpMax)) * 100))}%`;
+      if (ipFill) ipFill.style.width = `${Math.min(100, Math.max(0, (c.ip / Math.max(1, c.ipMax)) * 100))}%`;
+
+      renderFPDiamonds(s);
+    }
+
+    function renderFPDiamonds(s) {
+      const c = getChar(s);
+      const fp = Number(c.fp) || 0;
+      const topInput = document.getElementById(`stat-${s}-fp-top`);
+      const disp = document.getElementById(`res-${s}-fp-display`);
+      const cont = document.getElementById(`fpDiamondsContainer-${s}`);
+      if (topInput) topInput.value = fp;
+      if (disp) disp.textContent = fp;
+      if (!cont) return;
+      let html = '';
+      for (let i = 1; i <= Math.max(6, fp); i++) {
+        html += `<button type="button" onclick="setFP(${s}, ${fp === i ? i - 1 : i})" class="text-xs leading-none cursor-pointer ${i <= fp ? 'text-rose-600' : 'text-gray-300'}">♦</button>`;
+      }
+      cont.innerHTML = html;
+    }
+
+    function setFP(s, val) {
+      getChar(s).fp = Math.max(0, Math.min(10, val));
+      saveParty();
+      renderFPDiamonds(s);
+    }
+
+    function updateResource(s, key, val) {
+      const c = getChar(s);
+      c[key] = Math.max(0, val);
+      if (key === 'hpMax' && c.hp > c.hpMax) c.hp = c.hpMax;
+      if (key === 'mpMax' && c.mp > c.mpMax) c.mp = c.mpMax;
+      if (key === 'ipMax' && c.ip > c.ipMax) c.ip = c.ipMax;
+      saveParty();
+      renderResourceBars(s);
+      renderBattlePartyList();
+    }
+
+    function adjustResource(s, key, delta) {
+      const c = getChar(s);
+      const maxKey = `${key}Max`;
+      c[key] = Math.min(c[maxKey], Math.max(0, (c[key] || 0) + delta));
+      saveParty();
+      renderResourceBars(s);
+      renderBattlePartyList();
+    }
+
+    function restoreAllResources(s) {
+      const c = getChar(s);
+      c.hp = c.hpMax;
+      c.mp = c.mpMax;
+      c.ip = c.ipMax;
+      saveParty();
+      renderResourceBars(s);
+      renderBattlePartyList();
+    }
+
+    function renderQuickWeapons(s) {
+      const c = getChar(s);
+      const list = document.getElementById(`quickWeaponsList-${s}`);
+      if (!list) return;
+
+      const mainHtml = c.weapons.filter(w => w.equipped !== false).map(w => {
+        const d1 = getEffectiveDie(s, w.attr1).toUpperCase();
+        const d2 = getEffectiveDie(s, w.attr2).toUpperCase();
+        const acc = w.accBonus ? (w.accBonus > 0 ? `+${w.accBonus}` : `${w.accBonus}`) : '';
+        const elObj = ELEMENTS.find(e => e.key === w.element) || ELEMENTS[0];
+        return `
+          <div class="border border-[#c6dad6] bg-[#f8fbfa] rounded p-1.5 flex items-center justify-between gap-1.5">
+            <div class="min-w-0">
+              <div class="font-bold text-xs text-[#1b3632] truncate">${escapeHtml(w.name)}</div>
+              <div class="text-[11px] text-gray-600">
+                <span class="bg-[#e1eeeb] text-[#21403b] font-bebas px-1 rounded">${w.attr1.toUpperCase()}(${d1})+${w.attr2.toUpperCase()}(${d2})${acc}</span>
+                <span class="bg-amber-100 text-amber-900 font-bebas px-1 rounded">HR+${w.baseDmg}</span>
+                <span>${elObj.icon}</span>
+              </div>
+            </div>
+            <button type="button" onclick="rollWeaponAttack(${s}, '${w.id}', false)"
+              class="bg-[#254742] hover:bg-[#19332f] text-white font-bebas text-xs px-2.5 py-1 rounded cursor-pointer flex-shrink-0">
+              🎲 มือหลัก
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      const offW = c.offHandWeapon;
+      const offHtml = (offW && offW.equipped !== false) ? (() => {
+        const d1 = getEffectiveDie(s, offW.attr1).toUpperCase();
+        const d2 = getEffectiveDie(s, offW.attr2).toUpperCase();
+        const acc = offW.accBonus ? (offW.accBonus > 0 ? `+${offW.accBonus}` : `${offW.accBonus}`) : '';
+        const elObj = ELEMENTS.find(e => e.key === offW.element) || ELEMENTS[0];
+        return `
+          <div class="border border-amber-300 bg-amber-50/60 rounded p-1.5 flex items-center justify-between gap-1.5">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1">
+                <span class="bg-amber-700 text-white font-bebas text-[10px] px-1 rounded">มือ 2 (HR ล้วน)</span>
+                <span class="font-bold text-xs text-[#1b3632] truncate">${escapeHtml(offW.name)}</span>
+              </div>
+              <div class="text-[11px] text-gray-600">
+                <span class="bg-[#e1eeeb] text-[#21403b] font-bebas px-1 rounded">${offW.attr1.toUpperCase()}(${d1})+${offW.attr2.toUpperCase()}(${d2})${acc}</span>
+                <span class="bg-amber-200 text-amber-950 font-bebas px-1 rounded">ดาเมจ = HR</span>
+                <span>${elObj.icon}</span>
+              </div>
+            </div>
+            <button type="button" onclick="rollWeaponAttack(${s}, '${offW.id}', true)"
+              class="bg-amber-700 hover:bg-amber-600 text-white font-bebas text-xs px-2.5 py-1 rounded cursor-pointer flex-shrink-0">
+              🗡️ มือ 2
+            </button>
+          </div>
+        `;
+      })() : '';
+
+      list.innerHTML = (mainHtml + offHtml) || `<div class="text-[11px] text-gray-400 text-center py-2">ยังไม่มีอาวุธ</div>`;
+    }
+
+    function rollWeaponAttack(s, weaponId, isOffHand) {
+      const c = getChar(s);
+      const w = isOffHand ? c.offHandWeapon : c.weapons.find(item => item.id === weaponId);
+      if (!w) return;
+
+      const s1 = getDieSides(s, w.attr1);
+      const s2 = getDieSides(s, w.attr2);
+      const r1 = Math.floor(Math.random() * s1) + 1;
+      const r2 = Math.floor(Math.random() * s2) + 1;
+      const accBonus = Number(w.accBonus) || 0;
+      const accuracyTotal = r1 + r2 + accBonus;
+      const highRoll = Math.max(r1, r2);
+      const baseDmg = Number(w.baseDmg) || 0;
+      const totalDamage = isOffHand ? highRoll : (highRoll + baseDmg);
+      const elObj = ELEMENTS.find(e => e.key === w.element) || ELEMENTS[0];
+
+      displayRollResult(s, {
+        title: isOffHand ? `มือ 2 (HR ล้วน): ${w.name}` : `มือหลัก: ${w.name}`,
+        r1, s1, attr1: w.attr1.toUpperCase(),
+        r2, s2, attr2: w.attr2.toUpperCase(),
+        mod: accBonus,
+        totalCheck: accuracyTotal,
+        highRoll,
+        baseDmg,
+        totalDamage,
+        isOffHand: !!isOffHand,
+        elementText: `${elObj.icon} ${elObj.name}`,
+        isWeapon: true,
+        isCrit: (r1 === r2 && r1 >= 6),
+        isFumble: (r1 === 1 && r2 === 1)
+      });
+    }
+
+    function renderQuickSpells(s) {
+      const c = getChar(s);
+      const list = document.getElementById(`quickSpellsList-${s}`);
+      if (!list) return;
+      if (!c.spells.length) {
+        list.innerHTML = `<div class="text-[11px] text-gray-400 text-center py-2">ยังไม่มีเวทมนตร์</div>`;
+        return;
+      }
+      list.innerHTML = c.spells.map((sp, idx) => `
+        <div class="border border-[#c6dad6] bg-[#f8fbfa] rounded p-1.5 flex items-center justify-between gap-1.5">
+          <div class="min-w-0">
+            <div class="font-bold text-xs text-[#1b3632] truncate">${escapeHtml(sp.name)}</div>
+            <div class="text-[11px] text-sky-800 font-medium">ใช้ ${sp.mpCost || 0} MP ${sp.offensive ? `· HR+${sp.baseDmg || 0}` : ''}</div>
+          </div>
+          <button type="button" onclick="castSpell(${s}, ${idx})"
+            class="bg-indigo-700 hover:bg-indigo-600 text-white font-bebas text-xs px-2.5 py-1 rounded cursor-pointer flex-shrink-0">
+            ✨ ร่าย (-${sp.mpCost || 0} MP)
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function castSpell(s, idx) {
+      const c = getChar(s);
+      const sp = c.spells[idx];
+      if (!sp) return;
+      const cost = Math.max(0, Number(sp.mpCost) || 0);
+      if (c.mp < cost) {
+        displayRollResult(s, {
+          title: `ร่ายเวท ${sp.name}`,
+          isError: true,
+          errorMsg: `MP ไม่พอ! (มี ${c.mp} MP แต่ต้องใช้ ${cost} MP)`
+        });
+        return;
+      }
+      c.mp = Math.max(0, c.mp - cost);
+      saveParty();
+      renderResourceBars(s);
+      renderBattlePartyList();
+
+      if (sp.offensive) {
+        const a1 = sp.attr1 || 'ins';
+        const a2 = sp.attr2 || 'wlp';
+        const s1 = getDieSides(s, a1);
+        const s2 = getDieSides(s, a2);
+        const r1 = Math.floor(Math.random() * s1) + 1;
+        const r2 = Math.floor(Math.random() * s2) + 1;
+        const highRoll = Math.max(r1, r2);
+        const baseDmg = Number(sp.baseDmg) || 0;
+        const elObj = ELEMENTS.find(e => e.key === sp.element) || ELEMENTS[0];
+        displayRollResult(s, {
+          title: `ร่ายเวท ${sp.name} (-${cost} MP → เหลือ ${c.mp} MP)`,
+          r1, s1, attr1: a1.toUpperCase(),
+          r2, s2, attr2: a2.toUpperCase(),
+          mod: 0,
+          totalCheck: r1 + r2,
+          highRoll,
+          baseDmg,
+          totalDamage: highRoll + baseDmg,
+          elementText: `${elObj.icon} ${elObj.name}`,
+          isWeapon: true,
+          isCrit: r1 === r2 && r1 >= 6,
+          isFumble: r1 === 1 && r2 === 1
+        });
+      } else {
+        displayRollResult(s, {
+          title: `ร่ายเวท ${sp.name} (-${cost} MP → เหลือ ${c.mp} MP)`,
+          isSupportSpell: true,
+          desc: sp.desc || `ใช้ ${cost} MP สำเร็จ (MP คงเหลือ ${c.mp}/${c.mpMax})`
+        });
+      }
+    }
+
+    function openCheckModal(s, checkType) {
+      activeModalSlot = s;
+      currentModalCheckType = checkType;
+      document.getElementById('checkModalTitle').textContent = `P${s + 1} · ${getChar(s).name} · ${checkType}`;
+      document.getElementById('checkModal').classList.remove('hidden');
+      document.getElementById('checkModal').classList.add('flex');
+    }
+
+    function closeCheckModal() {
+      document.getElementById('checkModal').classList.add('hidden');
+      document.getElementById('checkModal').classList.remove('flex');
+    }
+
+    function executeCheckRoll() {
+      const s = activeModalSlot;
+      const a1 = document.getElementById('modalDie1').value;
+      const a2 = document.getElementById('modalDie2').value;
+      const mod = Number(document.getElementById('modalMod').value) || 0;
+      const s1 = getDieSides(s, a1);
+      const s2 = getDieSides(s, a2);
+      const r1 = Math.floor(Math.random() * s1) + 1;
+      const r2 = Math.floor(Math.random() * s2) + 1;
+      closeCheckModal();
+
+      displayRollResult(s, {
+        title: currentModalCheckType,
+        r1, s1, attr1: a1.toUpperCase(),
+        r2, s2, attr2: a2.toUpperCase(),
+        mod,
+        totalCheck: r1 + r2 + mod,
+        highRoll: Math.max(r1, r2),
+        isWeapon: false,
+        isCrit: r1 === r2 && r1 >= 6,
+        isFumble: r1 === 1 && r2 === 1
+      });
+    }
+
+    function displayRollResult(s, res) {
+      const titleEl = document.getElementById(`rollResultTitle-${s}`);
+      const badgeEl = document.getElementById(`rollSpecialBadge-${s}`);
+      const bodyEl = document.getElementById(`rollResultBody-${s}`);
+      if (!titleEl || !bodyEl) return;
+
+      titleEl.textContent = `🎲 P${s + 1} · ${res.title}`;
+      if (badgeEl) {
+        badgeEl.className = 'hidden text-[11px] font-bold px-2 py-0.2 rounded';
+        if (res.isCrit) {
+          badgeEl.textContent = '✨ CRIT!';
+          badgeEl.classList.remove('hidden');
+          badgeEl.classList.add('bg-amber-400', 'text-black');
+        } else if (res.isFumble) {
+          badgeEl.textContent = '💥 FUMBLE!';
+          badgeEl.classList.remove('hidden');
+          badgeEl.classList.add('bg-rose-600', 'text-white');
+        }
+      }
+
+      if (res.isError) {
+        bodyEl.innerHTML = `<span class="text-rose-400 font-bold">${escapeHtml(res.errorMsg)}</span>`;
+        return;
+      }
+
+      if (res.isSupportSpell) {
+        bodyEl.innerHTML = `<span class="text-emerald-300">${escapeHtml(res.desc)}</span>`;
+        return;
+      }
+
+      const modStr = res.mod !== 0 ? ` (${res.mod > 0 ? '+' : ''}${res.mod})` : '';
+      if (res.isWeapon) {
+        const dmgPart = res.isOffHand
+          ? `HR อย่างเดียว (${res.highRoll}) = <span class="text-amber-300 font-bebas text-base">💥 ดาเมจ ${res.totalDamage}</span>`
+          : `HR(${res.highRoll}) + ${res.baseDmg} = <span class="text-amber-300 font-bebas text-base">💥 ดาเมจ ${res.totalDamage}</span>`;
+
+        bodyEl.innerHTML = `
+          <div class="flex flex-wrap items-center gap-2">
+            <span>${res.attr1}:${res.r1}/d${res.s1} + ${res.attr2}:${res.r2}/d${res.s2}${modStr}</span>
+            <span class="bg-emerald-600 text-white font-bebas text-sm px-2 py-0.2 rounded">แม่นยำ ${res.isFumble ? 'FUMBLE' : res.totalCheck}</span>
+            <span>${dmgPart} (${res.elementText})</span>
+          </div>
+        `;
+      } else {
+        bodyEl.innerHTML = `
+          <div class="flex flex-wrap items-center gap-2">
+            <span>${res.attr1}:${res.r1}/d${res.s1} + ${res.attr2}:${res.r2}/d${res.s2}${modStr}</span>
+            <span class="bg-emerald-600 text-white font-bebas text-sm px-2 py-0.2 rounded">ผลรวม ${res.totalCheck}</span>
+            <span class="bg-[#254742] text-[#9ee0d3] font-bebas text-sm px-2 py-0.2 rounded">HR ${res.highRoll}</span>
+          </div>
+        `;
+      }
+
+      const timeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const line = res.isWeapon
+        ? `[${timeStr}] ${res.title}: แม่น ${res.totalCheck} | ${res.isOffHand ? `HRล้วน=${res.highRoll}` : `HR${res.highRoll}+${res.baseDmg}`} ➔ ดาเมจ ${res.totalDamage}`
+        : `[${timeStr}] ${res.title}: รวม ${res.totalCheck} | HR=${res.highRoll}`;
+
+      rollHistories[s].unshift(line);
+      if (rollHistories[s].length > 6) rollHistories[s].pop();
+      renderDiceLog(s);
+    }
+
+    function renderDiceLog(s) {
+      const logEl = document.getElementById(`diceLogList-${s}`);
+      if (!logEl) return;
+      if (!rollHistories[s].length) {
+        logEl.classList.add('hidden');
+        logEl.innerHTML = '';
+        return;
+      }
+      logEl.classList.remove('hidden');
+      logEl.innerHTML = rollHistories[s].map(l => `<div class="truncate">• ${escapeHtml(l)}</div>`).join('');
+    }
+
+    function clearDiceLog(s) {
+      rollHistories[s] = [];
+      renderDiceLog(s);
+    }
+
+    /* Sub-tab Editors */
+    function renderStatuses(s) {
+      const c = getChar(s);
+      const sGrid = document.getElementById(`statusesGrid-${s}`);
+      const iGrid = document.getElementById(`immunitiesGrid-${s}`);
+      if (sGrid) {
+        sGrid.innerHTML = STATUS_LIST.map(st => {
+          const checked = !!c.statuses?.[st.key];
+          const immune = st.negative && !!c.immunities?.[st.key];
+          return `
+            <label class="flex items-center gap-2 ${immune ? 'opacity-40' : 'cursor-pointer'}">
+              <input type="checkbox" ${checked ? 'checked' : ''} ${immune ? 'disabled' : ''} onchange="toggleStatus(${s}, '${st.key}', this.checked)">
+              <span class="font-semibold">${st.label}</span>
+              <span class="text-gray-400 text-[11px]">${st.desc}</span>
+            </label>
+          `;
+        }).join('');
+      }
+      if (iGrid) {
+        iGrid.innerHTML = IMMUNITY_LIST.map(st => {
+          const checked = !!c.immunities?.[st.key];
+          return `
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleImmunity(${s}, '${st.key}', this.checked)">
+              <span class="font-semibold">${st.label}</span>
+            </label>
+          `;
+        }).join('');
+      }
+    }
+
+    function toggleStatus(s, key, checked) {
+      const c = getChar(s);
+      if (checked && c.immunities?.[key]) return;
+      c.statuses[key] = checked;
+      saveParty();
+      renderPlayerSubComponents(s);
+    }
+
+    function toggleImmunity(s, key, checked) {
+      const c = getChar(s);
+      c.immunities[key] = checked;
+      if (checked) c.statuses[key] = false;
+      saveParty();
+      renderPlayerSubComponents(s);
+    }
+
+    function clearAllStatuses(s) {
+      getChar(s).statuses = {};
+      saveParty();
+      renderPlayerSubComponents(s);
+    }
+
+    function renderWeaponsEditor(s) {
+      const c = getChar(s);
+      const cont = document.getElementById(`weaponsEditorList-${s}`);
+      if (!cont) return;
+
+      const offW = c.offHandWeapon;
+      const offHtml = `
+        <div class="border border-amber-400 rounded p-2 bg-amber-50/70 grid grid-cols-1 sm:grid-cols-12 gap-1.5 items-center mb-1.5">
+          <div class="sm:col-span-4 flex items-center gap-1">
+            <input type="checkbox" ${offW.equipped !== false ? 'checked' : ''} onchange="editOffHandWeapon(${s}, 'equipped', this.checked)">
+            <span class="bg-amber-700 text-white font-bebas text-[10px] px-1 rounded">มือ 2 (HR ล้วน)</span>
+            <input type="text" value="${escapeHtml(offW.name)}" oninput="editOffHandWeapon(${s}, 'name', this.value)" class="w-full border rounded px-1.5 py-0.5 bg-white">
+          </div>
+          <div class="sm:col-span-3 flex items-center gap-1">
+            <select onchange="editOffHandWeapon(${s}, 'attr1', this.value)" class="border rounded px-1 py-0.5 bg-white w-full">
+              ${['dex','ins','mig','wlp'].map(a => `<option value="${a}" ${offW.attr1===a?'selected':''}>${a.toUpperCase()}</option>`).join('')}
+            </select>
+            <span>+</span>
+            <select onchange="editOffHandWeapon(${s}, 'attr2', this.value)" class="border rounded px-1 py-0.5 bg-white w-full">
+              ${['dex','ins','mig','wlp'].map(a => `<option value="${a}" ${offW.attr2===a?'selected':''}>${a.toUpperCase()}</option>`).join('')}
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex items-center gap-1">
+            <span>แม่น:</span>
+            <input type="number" value="${offW.accBonus || 0}" oninput="editOffHandWeapon(${s}, 'accBonus', Number(this.value))" class="w-10 border rounded text-center bg-white">
+          </div>
+          <div class="sm:col-span-2 text-amber-900 font-bebas">ดาเมจ = HR อย่างเดียว</div>
+          <div class="sm:col-span-1 flex justify-end">
+            <select onchange="editOffHandWeapon(${s}, 'element', this.value)" class="border rounded px-0.5 py-0.5 bg-white">
+              ${ELEMENTS.map(e => `<option value="${e.key}" ${offW.element===e.key?'selected':''}>${e.icon}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      `;
+
+      const mainHtml = c.weapons.map((w, idx) => `
+        <div class="border border-[#d5e3e0] rounded p-2 bg-[#f9fcfb] grid grid-cols-1 sm:grid-cols-12 gap-1.5 items-center">
+          <div class="sm:col-span-4 flex items-center gap-1">
+            <input type="checkbox" ${w.equipped !== false ? 'checked' : ''} onchange="editWeapon(${s}, ${idx}, 'equipped', this.checked)">
+            <span class="bg-[#254742] text-white font-bebas text-[10px] px-1 rounded">มือหลัก</span>
+            <input type="text" value="${escapeHtml(w.name)}" oninput="editWeapon(${s}, ${idx}, 'name', this.value)" class="w-full border rounded px-1.5 py-0.5 bg-white">
+          </div>
+          <div class="sm:col-span-3 flex items-center gap-1">
+            <select onchange="editWeapon(${s}, ${idx}, 'attr1', this.value)" class="border rounded px-1 py-0.5 bg-white w-full">
+              ${['dex','ins','mig','wlp'].map(a => `<option value="${a}" ${w.attr1===a?'selected':''}>${a.toUpperCase()}</option>`).join('')}
+            </select>
+            <span>+</span>
+            <select onchange="editWeapon(${s}, ${idx}, 'attr2', this.value)" class="border rounded px-1 py-0.5 bg-white w-full">
+              ${['dex','ins','mig','wlp'].map(a => `<option value="${a}" ${w.attr2===a?'selected':''}>${a.toUpperCase()}</option>`).join('')}
+            </select>
+          </div>
+          <div class="sm:col-span-2 flex items-center gap-1">
+            <span>แม่น:</span>
+            <input type="number" value="${w.accBonus || 0}" oninput="editWeapon(${s}, ${idx}, 'accBonus', Number(this.value))" class="w-10 border rounded text-center bg-white">
+          </div>
+          <div class="sm:col-span-2 flex items-center gap-1">
+            <span>HR+:</span>
+            <input type="number" value="${w.baseDmg || 0}" oninput="editWeapon(${s}, ${idx}, 'baseDmg', Number(this.value))" class="w-10 border rounded text-center bg-white">
+          </div>
+          <div class="sm:col-span-1 flex justify-end gap-1">
+            <select onchange="editWeapon(${s}, ${idx}, 'element', this.value)" class="border rounded px-0.5 py-0.5 bg-white">
+              ${ELEMENTS.map(e => `<option value="${e.key}" ${w.element===e.key?'selected':''}>${e.icon}</option>`).join('')}
+            </select>
+            <button type="button" onclick="deleteWeapon(${s}, ${idx})" class="text-rose-600 font-bold px-1 cursor-pointer">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      cont.innerHTML = offHtml + mainHtml;
+    }
+
+    function editOffHandWeapon(s, field, val) {
+      getChar(s).offHandWeapon[field] = val;
+      saveParty();
+      renderQuickWeapons(s);
+    }
+
+    function addWeapon(s) {
+      getChar(s).weapons.push({
+        id: `w-${s}-${Date.now()}`,
+        name: 'New Weapon',
+        attr1: 'dex',
+        attr2: 'mig',
+        accBonus: 0,
+        baseDmg: 6,
+        element: 'physical',
+        equipped: true
+      });
+      saveParty();
+      renderWeaponsEditor(s);
+      renderQuickWeapons(s);
+    }
+
+    function editWeapon(s, idx, field, val) {
+      getChar(s).weapons[idx][field] = val;
+      saveParty();
+      renderQuickWeapons(s);
+    }
+
+    function deleteWeapon(s, idx) {
+      getChar(s).weapons.splice(idx, 1);
+      saveParty();
+      renderWeaponsEditor(s);
+      renderQuickWeapons(s);
+    }
+
+    function updateGear(s, slot, prop, val) {
+      const c = getChar(s);
+      c.gear[slot][prop] = val;
+      const dexVal = Number((c.attributes.dex || 'd8').replace(/\D/g, '')) || 8;
+      const insVal = Number((c.attributes.ins || 'd8').replace(/\D/g, '')) || 8;
+      const arm = c.gear.armor;
+      const shd = c.gear.shield;
+      const baseDef = arm.martial ? (Number(arm.def) || 0) : (dexVal + (Number(arm.def) || 0));
+      c.def = baseDef + (Number(shd.def) || 0);
+      c.mdef = insVal + (Number(arm.mdef) || 0) + (Number(shd.mdef) || 0);
+      saveParty();
+      const defEl = document.getElementById(`stat-${s}-def`);
+      const mdefEl = document.getElementById(`stat-${s}-mdef`);
+      if (defEl) defEl.value = c.def;
+      if (mdefEl) mdefEl.value = c.mdef;
+    }
+
+    function renderSpells(s) {
+      const c = getChar(s);
+      const cont = document.getElementById(`spellsContainer-${s}`);
+      if (!cont) return;
+      cont.innerHTML = c.spells.map((sp, idx) => `
+        <div class="border border-[#d5e3e0] rounded p-2 bg-[#f9fcfb] space-y-1.5">
+          <div class="flex flex-wrap items-center justify-between gap-1">
+            <input type="text" value="${escapeHtml(sp.name)}" oninput="editSpell(${s}, ${idx}, 'name', this.value)" class="font-bold border-b bg-transparent w-36">
+            <label>MP: <input type="number" value="${sp.mpCost || 0}" oninput="editSpell(${s}, ${idx}, 'mpCost', Number(this.value))" class="w-10 border rounded text-center bg-white"></label>
+            <label class="flex items-center gap-1"><input type="checkbox" ${sp.offensive?'checked':''} onchange="editSpell(${s}, ${idx}, 'offensive', this.checked)"> โจมตี</label>
+            <button type="button" onclick="castSpell(${s}, ${idx})" class="bg-indigo-700 text-white px-2 py-0.5 rounded cursor-pointer">✨ ร่าย (-${sp.mpCost||0} MP)</button>
+            <button type="button" onclick="deleteSpell(${s}, ${idx})" class="text-rose-600 font-bold px-1 cursor-pointer">✕</button>
+          </div>
+          ${sp.offensive ? `
+            <div class="flex flex-wrap items-center gap-1.5">
+              <select onchange="editSpell(${s}, ${idx}, 'attr1', this.value)" class="border rounded bg-white">${['dex','ins','mig','wlp'].map(a=>`<option value="${a}" ${sp.attr1===a?'selected':''}>${a.toUpperCase()}</option>`).join('')}</select>
+              <span>+</span>
+              <select onchange="editSpell(${s}, ${idx}, 'attr2', this.value)" class="border rounded bg-white">${['dex','ins','mig','wlp'].map(a=>`<option value="${a}" ${sp.attr2===a?'selected':''}>${a.toUpperCase()}</option>`).join('')}</select>
+              <span>HR+</span>
+              <input type="number" value="${sp.baseDmg || 0}" oninput="editSpell(${s}, ${idx}, 'baseDmg', Number(this.value))" class="w-10 border rounded text-center bg-white">
+              <select onchange="editSpell(${s}, ${idx}, 'element', this.value)" class="border rounded bg-white">${ELEMENTS.map(e=>`<option value="${e.key}" ${sp.element===e.key?'selected':''}>${e.icon}</option>`).join('')}</select>
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function addSpell(s) {
+      getChar(s).spells.push({
+        id: `sp-${s}-${Date.now()}`,
+        name: 'New Spell',
+        mpCost: 5,
+        offensive: true,
+        attr1: 'ins',
+        attr2: 'wlp',
+        baseDmg: 10,
+        element: 'fire',
+        desc: ''
+      });
+      saveParty();
+      renderSpells(s);
+      renderQuickSpells(s);
+    }
+
+    function editSpell(s, idx, field, val) {
+      getChar(s).spells[idx][field] = val;
+      saveParty();
+      renderSpells(s);
+      renderQuickSpells(s);
+    }
+
+    function deleteSpell(s, idx) {
+      getChar(s).spells.splice(idx, 1);
+      saveParty();
+      renderSpells(s);
+      renderQuickSpells(s);
+    }
+
+    function renderClasses(s) {
+      const c = getChar(s);
+      const cont = document.getElementById(`classesContainer-${s}`);
+      if (!cont) return;
+      cont.innerHTML = c.classes.map((cls, cIdx) => `
+        <div class="border border-[#c6dad6] rounded overflow-hidden">
+          <div class="bg-[#345c56] text-white px-2.5 py-1 flex items-center justify-between">
+            <input type="text" value="${escapeHtml(cls.name)}" oninput="editClass(${s}, ${cIdx}, 'name', this.value)" class="font-bebas bg-transparent outline-none">
+            <div class="flex items-center gap-1.5">
+              <span>Lv.</span>
+              <input type="number" value="${cls.level}" oninput="editClass(${s}, ${cIdx}, 'level', Number(this.value))" class="w-8 bg-white text-[#254742] text-center rounded">
+              <button type="button" onclick="deleteClass(${s}, ${cIdx})" class="text-rose-200 px-1 cursor-pointer">✕</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addClass(s) {
+      getChar(s).classes.push({ name: 'NEW CLASS', level: 1, skills: [] });
+      saveParty();
+      renderClasses(s);
+    }
+
+    function editClass(s, cIdx, field, val) {
+      getChar(s).classes[cIdx][field] = val;
+      saveParty();
+    }
+
+    function deleteClass(s, cIdx) {
+      getChar(s).classes.splice(cIdx, 1);
+      saveParty();
+      renderClasses(s);
+    }
+
+    function renderEffects(s) {
+      const c = getChar(s);
+      const cont = document.getElementById(`effectsContainer-${s}`);
+      if (!cont) return;
+      cont.innerHTML = c.effects.map((ef, idx) => `
+        <div class="border border-[#d5e3e0] rounded p-2 bg-[#f9fcfb] flex items-center gap-2">
+          <input type="checkbox" ${ef.active?'checked':''} onchange="editEffect(${s}, ${idx}, 'active', this.checked)">
+          <input type="text" value="${escapeHtml(ef.name)}" oninput="editEffect(${s}, ${idx}, 'name', this.value)" class="font-bold border-b bg-transparent w-32">
+          <input type="text" value="${escapeHtml(ef.desc)}" oninput="editEffect(${s}, ${idx}, 'desc', this.value)" class="flex-1 border-b bg-transparent">
+          <button type="button" onclick="deleteEffect(${s}, ${idx})" class="text-rose-600 font-bold px-1 cursor-pointer">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function addEffect(s) {
+      getChar(s).effects.push({ name: 'Effect', active: true, desc: '' });
+      saveParty();
+      renderEffects(s);
+    }
+
+    function editEffect(s, idx, field, val) {
+      getChar(s).effects[idx][field] = val;
+      saveParty();
+    }
+
+    function deleteEffect(s, idx) {
+      getChar(s).effects.splice(idx, 1);
+      saveParty();
+      renderEffects(s);
+    }
+
+    function renderTraitsAndBonds(s) {
+      const c = getChar(s);
+      const cont = document.getElementById(`bondsContainer-${s}`);
+      if (!cont) return;
+      cont.innerHTML = c.bonds.map((b, bIdx) => `
+        <div class="border border-[#d5e3e0] rounded p-2 bg-[#f9fcfb] flex flex-wrap items-center gap-1.5">
+          <input type="text" value="${escapeHtml(b.name)}" oninput="editBondName(${s}, ${bIdx}, this.value)" class="border rounded px-2 py-0.5 bg-white w-32">
+          ${BOND_FEELINGS.map(f => {
+            const on = (b.feelings || []).includes(f);
+            return `<button type="button" onclick="toggleBondFeeling(${s}, ${bIdx}, '${f}')" class="px-1.5 py-0.5 rounded border cursor-pointer ${on ? 'bg-[#254742] text-white' : 'bg-white text-gray-500'}">${f}</button>`;
+          }).join('')}
+          <button type="button" onclick="deleteBond(${s}, ${bIdx})" class="text-rose-600 font-bold px-1 cursor-pointer">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function addBond(s) {
+      getChar(s).bonds.push({ name: 'Bond', feelings: ['Loyalty'] });
+      saveParty();
+      renderTraitsAndBonds(s);
+    }
+
+    function editBondName(s, idx, val) {
+      getChar(s).bonds[idx].name = val;
+      saveParty();
+    }
+
+    function toggleBondFeeling(s, idx, feeling) {
+      const b = getChar(s).bonds[idx];
+      b.feelings = b.feelings || [];
+      b.feelings = b.feelings.includes(feeling) ? b.feelings.filter(f => f !== feeling) : [...b.feelings, feeling];
+      saveParty();
+      renderTraitsAndBonds(s);
+    }
+
+    function deleteBond(s, idx) {
+      getChar(s).bonds.splice(idx, 1);
+      saveParty();
+      renderTraitsAndBonds(s);
+    }
+
+    function resetCharacter(s) {
+      party[s] = createDefaultChar(s + 1);
+      rollHistories[s] = [];
+      saveParty();
+      renderParty();
+      renderBattleArena();
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function initTabChannel() {
+      try {
+        if ('BroadcastChannel' in window) {
+          tabChannel = new BroadcastChannel('fu_live_party_channel');
+          tabChannel.onmessage = (ev) => {
+            const data = ev.data;
+            if (!data) return;
+            if (Array.isArray(data.party)) {
+              party = data.party;
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(party));
+            }
+            if (data.battleState && Array.isArray(data.battleState.enemies)) {
+              battleState = data.battleState;
+              localStorage.setItem(BATTLE_STORAGE_KEY, JSON.stringify(battleState));
+            }
+            syncPartySelectors();
+            renderParty();
+            renderBattleArena();
+          };
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      window.addEventListener('storage', (ev) => {
+        if (ev.key === STORAGE_KEY || ev.key === BATTLE_STORAGE_KEY) {
+          party = loadParty();
+          battleState = loadBattleState();
+          syncPartySelectors();
+          renderParty();
+          renderBattleArena();
+        }
+      });
+    }
+
+    window.onload = function () {
+      initTabChannel();
+      syncPartySelectors();
+      renderParty();
+      renderBattleArena();
+    };
+  </script>
+</body>
+</html>
